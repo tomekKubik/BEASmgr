@@ -5,6 +5,7 @@ classdef Model
     
     properties (GetAccess = private)
         middle; % Middle point - should be 1D array.
+        r;
     end
     
     methods
