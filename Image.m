@@ -10,7 +10,7 @@ classdef Image
         time; % 1-D matrix containing time values in seconds
         dim; % 1-D 4 element matrix containing dimensions: [nx ny nz nt]
         voxelSize; % 1-D 3 element matrix containg voxel sizes in direction: [dx dy dz]
-        imageOrigin; %  1-D 3 element matrix containg lication of the image origin: [ox oy oz]
+        imageOrigin; %  1-D 3 element matrix containg location of the image origin: [ox oy oz]
         voxels; % 4-D matrix containg all image voxels: [time z x y];
     end
     
@@ -25,7 +25,14 @@ classdef Image
         end
         
         function obj = readImage(imageFile)
-            % TODO for Kasia: readImage from file
+            %IMAGE Read image from file selected by user
+            [fileName,filePath] = uigetfile('*.*','Select and image');
+            if  isequal(fileName,0)
+                disp('User selected Cancel');
+            else
+                disp(['User selected ', fullfile(filePath,fileName)]);
+                imageFile = imread(fileName);
+            end 
         end
         
         function [ox oy oz] = getRealFromMatrix(ix, iy, iz)
