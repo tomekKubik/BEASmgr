@@ -7,11 +7,11 @@ classdef Image
     %   image origin (point 0,0,0)
     
     properties
-        time; % 1-D matrix containing time values in seconds
+        time; % 1-D matrix containing time values in seconds  
         dim; % 1-D 4 element matrix containing dimensions: [nx ny nz nt]
         voxelSize; % 1-D 3 element matrix containg voxel sizes in direction: [dx dy dz]
-        imageOrigin; %  1-D 3 element matrix containg location of the image origin: [ox oy oz]
-        voxels; % 4-D matrix containg all image voxels: [time z x y];
+        imageOrigin; %  1-D 3 element matrix containg location of the image origin: [ox oy oz] skalowanie
+        voxels; % 4-D matrix containg all image voxels: [time z x y]; 
     end
     
     methods
@@ -21,27 +21,66 @@ classdef Image
             obj.dim = [nx ny nz nt];
             obj.voxelSize = [1 1 1];
             obj.imageOrigin = [0 0 0];
-            obj.time = 1:nt;
+            obj.time = 1:nt; 
         end
         
-        function obj = readImage(imageFile)
+        function obj = read2DImageFromScript(obj)
             %IMAGE Read image from file selected by user
-            [fileName,filePath] = uigetfile('*.*','Select and image');
-            if  isequal(fileName,0)
+            [fileName,filePath] = uigetfile('*.m','Select an image file');
+            if  isequal([filePath fileName],0)
                 disp('User selected Cancel');
             else
                 disp(['User selected ', fullfile(filePath,fileName)]);
-                imageFile = imread(fileName);
-            end 
+                % Wykonaj skrypt z pliku
+                run(fullfile(filePath,fileName));
+               
+%dim
+                [ny, nx, nt] = size(BB_data_decim);       
+                obj.dim(1) = nx;
+                obj.dim(2) = ny;
+                obj.dim(3) = 1;
+                obj.dim(4) = nt;
+%voxelSize
+                obj.voxelSize(1) = 100/obj.dim(1);
+                obj.voxelSize(2) = 100/obj.dim(2);
+                if obj.dim(3)==1
+                    obj.voxelSize(3)=1;
+                else
+                    obj.voxelSize(3) = 100/obj.dim(3);  %czy nie 1 / 0?
+                end
+%time
+                obj.time = linspace(1,60,obj.dim(4));
+%imageOrgin
+                obj.imageOrigin(1) = round(obj.dim(1)/2);
+                obj.imageOrigin(2) = round(obj.dim(2)/2);
+                obj.imageOrigin(3) = 0;
+%voxels
+                obj.voxels = fliplr(obj.dim);
+            end
         end
         
-        function [ox oy oz] = getRealFromMatrix(ix, iy, iz)
-            % TODO for Kasia: convert matrix coordinates into milimeters
-        end;
+        function [ox, oy, oz] = getRealFromMatrix(obj,ix, iy, iz)
+                ox = obj.voxelSize(1)*ix-obj.voxelSize(1)*obj.imageOrgin(1);
+                oy = obj.voxelSize(2)*iy-obj.voxelSize(2)*obj.imageOrgin(2);
+                oz = obj.voxelSize(3)*iz-obj.voxelSize(3)*obj.imageOrgin(3);
+        end
         
-        function [ox oy oz] = getMatrixFromReal(ix, iy, iz)
-            % TODO for Kasia: convert matrix coordinates into milimeters
-        end;
+        function [ix, iy, iz] = getMatrixFromReal(obj,ox, oy, oz)
+                ix = int(ox/obj.voxelSize(1))+obj.imageOrigin(1);
+                iy = int(oy/obj.voxelSize(2))+obj.imageOrigin(2);
+                iz = int(oz/obj.voxelSize(3))+obj.imageOrigin(3);
+        end
+        
+        function showImage(obj,t)
+%               figure
+%              for t = 1:obj.dim(4)
+                    imagesc(abs(obj.voxels(t,1,:,:)))
+%                end
+%                hold on; 
+%                plot(obj.imageOrigin(2),obj.imageOrigin(1),'r+', 'MarkerSize', 10);
+        end
     end
 end
-
+%uislider
+%showImage - funkcja (scrolowanie po czasie, krzy¿yk pokazuj¹cy origina,
+%wczytanie)

@@ -21,12 +21,12 @@ classdef Model
             obj.phis = linspace(0,360,nphi+1);
             obj.rs = ones(ntheta+1,nphi+1);
         end
-        
-        function [mid] = getMiddle(obj)
+         function [mid] = getMiddle(obj)
             mid = zeros(1,3);
             mid(1) = obj.middle(1);
             mid(2) = obj.middle(2);
             mid(3) = obj.middle(3);
+       
         end
         
         function obj = setR(obj,nth,nph,r)
