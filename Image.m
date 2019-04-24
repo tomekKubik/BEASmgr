@@ -24,7 +24,7 @@ classdef Image
             obj.time = 1:nt; 
         end
         
-        function obj = read2DImageFromScript(obj)
+        function [obj, macierz] = read2DImageFromScript(obj)
             %IMAGE Read image from file selected by user
             [fileName,filePath] = uigetfile('*.m','Select an image file');
             if  isequal([filePath fileName],0)
@@ -33,9 +33,9 @@ classdef Image
                 disp(['User selected ', fullfile(filePath,fileName)]);
                 % Wykonaj skrypt z pliku
                 run(fullfile(filePath,fileName));
-               
+                macierz = BB_data_decim;
 %dim
-                [ny, nx, nt] = size(BB_data_decim);       
+                [nx, ny, nt] = size(BB_data_decim);       
                 obj.dim(1) = nx;
                 obj.dim(2) = ny;
                 obj.dim(3) = 1;
@@ -46,16 +46,21 @@ classdef Image
                 if obj.dim(3)==1
                     obj.voxelSize(3)=1;
                 else
-                    obj.voxelSize(3) = 100/obj.dim(3);  %czy nie 1 / 0?
+                    obj.voxelSize(3) = 100/obj.dim(3);  
                 end
 %time
                 obj.time = linspace(1,60,obj.dim(4));
 %imageOrgin
                 obj.imageOrigin(1) = round(obj.dim(1)/2);
                 obj.imageOrigin(2) = round(obj.dim(2)/2);
-                obj.imageOrigin(3) = 0;
-%voxels
-                obj.voxels = fliplr(obj.dim);
+                obj.imageOrigin(3) = 1;
+%voxels 
+                obj.voxels = zeros(obj.dim(4),obj.dim(3),obj.dim(1),obj.dim(2));
+                for t = 1:obj.dim(4)
+                    for z = 1:obj.dim(3)
+                        obj.voxels(t,z,:,:) = macierz(:,:,t);
+                    end
+                end 
             end
         end
         
@@ -71,16 +76,27 @@ classdef Image
                 iz = int(oz/obj.voxelSize(3))+obj.imageOrigin(3);
         end
         
-        function showImage(obj,t)
-%               figure
-%              for t = 1:obj.dim(4)
-                    imagesc(abs(obj.voxels(t,1,:,:)))
-%                end
-%                hold on; 
-%                plot(obj.imageOrigin(2),obj.imageOrigin(1),'r+', 'MarkerSize', 10);
+        function showFilm(obj)
+%                 fig = uifigure('Dane', Data);
+%                 pnl = uipanel(fig);
+%                 sld = uislider(pnl,'Position',[50 50 50 3]); % [left bottom width height]
+%                 sld.Limits  = [0 obj.voxels(1)];
+              for t = 1:obj.dim(4)
+                    imagesc(abs(squeeze(obj.voxels(t,1,:,:))));
+                    hold on 
+                    plot(obj.imageOrigin(2),obj.imageOrigin(1),'r+', 'MarkerSize', 10);
+                    pause(0.03)  
+              end
+        end
+        
+        
+        function displayImageApp(obj)
+            %TODO: Application
         end
     end
 end
 %uislider
 %showImage - funkcja (scrolowanie po czasie, krzy¿yk pokazuj¹cy origina,
 %wczytanie)
+%gui + voxels - todo
+%nie wczytywane s¹ do struktury obrazu wartoœci z obrazu
