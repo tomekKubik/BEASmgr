@@ -12,6 +12,7 @@ classdef Image
         voxelSize; % 1-D 3 element matrix containg voxel sizes in direction: [dx dy dz]
         imageOrigin; %  1-D 3 element matrix containg location of the image origin: [ox oy oz] skalowanie
         voxels; % 4-D matrix containg all image voxels: [time z x y]; 
+        
     end
     
     methods
@@ -24,7 +25,7 @@ classdef Image
             obj.time = 1:nt; 
         end
         
-        function [obj, macierz] = read2DImageFromScript(obj)
+        function obj = read2DImageFromScript(obj)
             %IMAGE Read image from file selected by user
             [fileName,filePath] = uigetfile('*.m','Select an image file');
             if  isequal([filePath fileName],0)
@@ -86,11 +87,12 @@ classdef Image
                     hold on 
                     plot(obj.imageOrigin(2),obj.imageOrigin(1),'r+', 'MarkerSize', 10);
                     pause(0.03)  
-              end
+              end 
         end
         
         
-        function displayImageApp(obj)
+        function displayImageApp(app,obj)
+                
             %TODO: Application
         end
     end
@@ -99,4 +101,3 @@ end
 %showImage - funkcja (scrolowanie po czasie, krzy¿yk pokazuj¹cy origina,
 %wczytanie)
 %gui + voxels - todo
-%nie wczytywane s¹ do struktury obrazu wartoœci z obrazu
