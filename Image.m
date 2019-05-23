@@ -6,7 +6,7 @@ classdef Image
     %   time vector
     %   image origin (point 0,0,0)
     
-    properties
+    properties (Access = public)
         time; % 1-D matrix containing time values in seconds  
         dim; % 1-D 4 element matrix containing dimensions: [nx ny nz nt]
         voxelSize; % 1-D 3 element matrix containg voxel sizes in direction: [dx dy dz]
@@ -15,7 +15,7 @@ classdef Image
         
     end
     
-    methods
+    methods (Access = public)
         function obj = Image(nx,ny,nz,nt)
             %IMAGE Constructs an empty image of the given dimensions.
             obj.voxels = zeros(nt,nz,nx,ny);
@@ -36,6 +36,7 @@ classdef Image
                 run(fullfile(filePath,fileName));
                 macierz = BB_data_decim;
 %dim
+                obj = Image(1,1,1,1);
                 [nx, ny, nt] = size(BB_data_decim);       
                 obj.dim(1) = nx;
                 obj.dim(2) = ny;
@@ -98,6 +99,6 @@ classdef Image
     end
 end
 %uislider
-%showImage - funkcja (scrolowanie po czasie, krzy¿yk pokazuj¹cy origina,
+%showImage - funkcja (scrolowanie po czasie, krzyï¿½yk pokazujï¿½cy origina,
 %wczytanie)
 %gui + voxels - todo
