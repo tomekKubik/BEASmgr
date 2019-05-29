@@ -25,14 +25,19 @@ classdef Image
             obj.time = 1:nt; 
         end
         
-        function obj = read2DImageFromScript(obj)
+        function obj = read2DImageFromScript(obj,filePath,fileName)
             %IMAGE Read image from file selected by user
-            [fileName,filePath] = uigetfile('*.m','Select an image file');
-            if  isequal([filePath fileName],0)
-                disp('User selected Cancel');
-            else
-                disp(['User selected ', fullfile(filePath,fileName)]);
-                % Wykonaj skrypt z pliku
+%             [fileName,filePath] = uigetfile('*.m','Select an image file');
+%             if  isequal([filePath fileName],0)               
+%                  message1 = 'Error! Please select an image file';
+%                  disp(message1);
+%                 return 
+%             else
+% %                 f = uifgure;
+% %                 message2 = ['User selected ', fullfile(filePath,fileName)];
+% %                 uialert(f, message2,'Icon', 'info');
+%                 disp(['User selected ', fullfile(filePath,fileName)]);
+%                 % Wykonaj skrypt z pliku
                 run(fullfile(filePath,fileName));
                 macierz = BB_data_decim;
 %dim
@@ -63,7 +68,7 @@ classdef Image
                         obj.voxels(t,z,:,:) = macierz(:,:,t);
                     end
                 end 
-            end
+%             end
         end
         
         function [ox, oy, oz] = getRealFromMatrix(obj,ix, iy, iz)
@@ -96,6 +101,14 @@ classdef Image
                 
             %TODO: Application
         end
+        
+        function ReflectedImage = ImageReflection(obj)
+            reflection = flipud(obj.voxels);
+            %ReflectedImage = zeros(obj.dim(4),2*obj.dim(3),2*obj.dim(1),2*obj.dim(2));
+            ReflectedImage = [obj.voxels; reflection];
+            
+        end    
+            
     end
 end
 %uislider
