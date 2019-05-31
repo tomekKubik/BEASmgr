@@ -26,7 +26,7 @@ classdef Image
         end
         
         function obj = read2DImageFromScript(obj,filePath,fileName)
-            %IMAGE Read image from file selected by user
+            %IMAGE Read image from file selected by user //// 
 %             [fileName,filePath] = uigetfile('*.m','Select an image file');
 %             if  isequal([filePath fileName],0)               
 %                  message1 = 'Error! Please select an image file';
@@ -38,7 +38,7 @@ classdef Image
 % %                 uialert(f, message2,'Icon', 'info');
 %                 disp(['User selected ', fullfile(filePath,fileName)]);
 %                 % Wykonaj skrypt z pliku
-                run(fullfile(filePath,fileName));
+                run(fullfile(filePath,fileName))
                 macierz = BB_data_decim;
 %dim
                 obj = Image(1,1,1,1);
@@ -68,7 +68,7 @@ classdef Image
                         obj.voxels(t,z,:,:) = macierz(:,:,t);
                     end
                 end 
-%             end
+%              end
         end
         
         function [ox, oy, oz] = getRealFromMatrix(obj,ix, iy, iz)
@@ -84,10 +84,6 @@ classdef Image
         end
         
         function showFilm(obj)
-%                 fig = uifigure('Dane', Data);
-%                 pnl = uipanel(fig);
-%                 sld = uislider(pnl,'Position',[50 50 50 3]); % [left bottom width height]
-%                 sld.Limits  = [0 obj.voxels(1)];
               for t = 1:obj.dim(4)
                     imagesc(abs(squeeze(obj.voxels(t,1,:,:))));
                     hold on 
@@ -103,7 +99,7 @@ classdef Image
         end
         
         function ReflectedImage = ImageReflection(obj)
-            reflection = flipud(obj.voxels);
+            reflection = flipud(obj.voxels); %TODO for po x i y
             %ReflectedImage = zeros(obj.dim(4),2*obj.dim(3),2*obj.dim(1),2*obj.dim(2));
             ReflectedImage = [obj.voxels; reflection];
             
@@ -111,7 +107,3 @@ classdef Image
             
     end
 end
-%uislider
-%showImage - funkcja (scrolowanie po czasie, krzy�yk pokazuj�cy origina,
-%wczytanie)
-%gui + voxels - todo
