@@ -48,12 +48,12 @@ classdef Image
                 obj.dim(3) = 1;
                 obj.dim(4) = nt;
 %voxelSize
-                obj.voxelSize(1) = 100/obj.dim(1);
-                obj.voxelSize(2) = 100/obj.dim(2);
+                obj.voxelSize(1) = voxS(1);
+                obj.voxelSize(2) = voxS(2);
                 if obj.dim(3)==1
                     obj.voxelSize(3)=1;
                 else
-                    obj.voxelSize(3) = 100/obj.dim(3);  
+                    obj.voxelSize(3) = voxS(3);  
                 end
 %time
                 obj.time = linspace(1,60,obj.dim(4));
@@ -90,12 +90,6 @@ classdef Image
                     plot(obj.imageOrigin(2),obj.imageOrigin(1),'r+', 'MarkerSize', 10);
                     pause(0.03)  
               end 
-        end
-        
-        
-        function displayImageApp(app,obj)
-                
-            %TODO: Application
         end
         
         function ReflectedImage = ImageReflection(obj)
