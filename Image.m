@@ -93,9 +93,15 @@ classdef Image
         end
         
         function ReflectedImage = ImageReflection(obj)
-            reflection = flipud(obj.voxels); %TODO for po x i y
-            %ReflectedImage = zeros(obj.dim(4),2*obj.dim(3),2*obj.dim(1),2*obj.dim(2));
-            ReflectedImage = [obj.voxels; reflection];
+             ReflectedImage = zeros(obj.dim(4),obj.dim(3),obj.dim(1),obj.dim(2)*2);
+            for z = 1:obj.dim(3)
+                for t = 1:obj.dim(4)
+                    matrix = squeeze(obj.voxels(t,z,:,:));
+                    ReflectedImage(t,z,:,1:obj.dim(2)) = matrix;
+                    fmatrix = flipud(matrix);
+                    ReflectedImage(t,z,:,obj.dim(2)+1:2*obj.dim(2)) = fmatrix;
+                end
+            end
             
         end    
             
