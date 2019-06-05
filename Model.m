@@ -21,7 +21,13 @@ classdef Model
             obj.phis = linspace(0,360,nphi+1);
             obj.rs = ones(ntheta+1,nphi+1);
         end
-         function [mid] = getMiddle(obj)
+        
+        function obj = create2DModelBasedOnEllipse(x,y,ra,rb,ntheta,nphi)
+            obj = Model(x,y,z,ntheta,nphi);
+            % TODO: Geometrycne s³upki
+        end
+        
+        function [mid] = getMiddle(obj)
             mid = zeros(1,3);
             mid(1) = obj.middle(1);
             mid(2) = obj.middle(2);
