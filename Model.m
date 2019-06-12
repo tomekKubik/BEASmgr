@@ -3,15 +3,17 @@ classdef Model
     %   Class represents the segmentation model streched over radially
     %   equal nodes and approximated by Bsplines.
     
-    properties
+    properties (Access = public)
         middle; % Middle point - should be 1D array.
         % Model coordinates:
         thetas;
         phis;
         rs;
+        image Image
+        app app1
     end
     
-    methods
+    methods (Access = public)
         function obj = Model(x,y,z,ntheta,nphi)
             %MODEL Construct an instance of this class
             %   Model is initialized with its middle coordinates and with the specific radial
@@ -22,9 +24,33 @@ classdef Model
             obj.rs = ones(ntheta+1,nphi+1);
         end
         
-        function obj = create2DModelBasedOnEllipse(x,y,ra,rb,ntheta,nphi)
+        function [xunit, yunit, obj] = create2DModelBasedOnElipse(obj,image,x,y,z,ra,rb,ntheta,nphi)
             obj = Model(x,y,z,ntheta,nphi);
-            % TODO: Geometrycne s³upki
+            obj.image = image;
+      %      obj = Model (1,1,1,1,1);   
+            [ix, iy, iz] = getMatrixFromReal(obj.image, x, y, z);
+            obj.middle(1) = ix;
+            obj.middle(2) = iy;
+            
+            if ntheta==1 
+                obj.thetas = pi/2;
+            else
+                obj.thetas = linspace(0,pi,ntheta);
+            end
+            
+            obj.phis = linspace(0,2*pi,nphi+1);
+            
+            obj.rs = ones(ntheta,nphi+1);
+            b = (ra^2*(sin(obj.phis).^2)+rb^2*(cos(obj.phis).^2));
+            for i = 1:nphi+1
+                obj.rs(i) = sqrt((ra^2*rb^2)/b(i));
+            end
+            
+            xunit = (ra * cos(obj.phis) / image.voxelSize(2)) + ix;
+            yunit = (rb * sin(obj.phis) / image.voxelSize(1)) + iy;
+             % TODO: Geometrycne s³upki
+            
+            
         end
         
         function [mid] = getMiddle(obj)
@@ -41,6 +67,11 @@ classdef Model
         
         function r = getR(obj,nth,nph)
             rs(nth,nph);
+        end
+        
+        function testModel(obj)
+            obj
+            obj.rs
         end
     end
 end

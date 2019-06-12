@@ -42,14 +42,14 @@ classdef Image
                 macierz = BB_data_decim;
 %dim
                 obj = Image(1,1,1,1);
-                [nx, ny, nt] = size(BB_data_decim);       
+                [ny, nx, nt] = size(BB_data_decim);       %zm
                 obj.dim(1) = nx;
                 obj.dim(2) = ny;
                 obj.dim(3) = 1;
                 obj.dim(4) = nt;
 %voxelSize
-                obj.voxelSize(1) = voxS(1);
-                obj.voxelSize(2) = voxS(2);
+                obj.voxelSize(1) = voxS(2); %x
+                obj.voxelSize(2) = voxS(1); %y
                 if obj.dim(3)==1
                     obj.voxelSize(3)=1;
                 else
@@ -62,7 +62,7 @@ classdef Image
                 obj.imageOrigin(2) = round(obj.dim(2)/2);
                 obj.imageOrigin(3) = 1;
 %voxels 
-                obj.voxels = zeros(obj.dim(4),obj.dim(3),obj.dim(1),obj.dim(2));
+                obj.voxels = zeros(obj.dim(4),obj.dim(3),obj.dim(2),obj.dim(1)); %zm
                 for t = 1:obj.dim(4)
                     for z = 1:obj.dim(3)
                         obj.voxels(t,z,:,:) = macierz(:,:,t);
@@ -72,15 +72,15 @@ classdef Image
         end
         
         function [ox, oy, oz] = getRealFromMatrix(obj,ix, iy, iz)
-                ox = obj.voxelSize(1)*ix-obj.voxelSize(1)*obj.imageOrgin(1);
-                oy = obj.voxelSize(2)*iy-obj.voxelSize(2)*obj.imageOrgin(2);
-                oz = obj.voxelSize(3)*iz-obj.voxelSize(3)*obj.imageOrgin(3);
+                ox = obj.voxelSize(1)*ix-obj.voxelSize(1)*obj.imageOrigin(1);
+                oy = obj.voxelSize(2)*iy-obj.voxelSize(2)*obj.imageOrigin(2);
+                oz = obj.voxelSize(3)*iz-obj.voxelSize(3)*obj.imageOrigin(3);
         end
         
         function [ix, iy, iz] = getMatrixFromReal(obj,ox, oy, oz)
-                ix = int(ox/obj.voxelSize(1))+obj.imageOrigin(1);
-                iy = int(oy/obj.voxelSize(2))+obj.imageOrigin(2);
-                iz = int(oz/obj.voxelSize(3))+obj.imageOrigin(3);
+                ix = (ox/obj.voxelSize(1))+obj.imageOrigin(1);
+                iy = (oy/obj.voxelSize(2))+obj.imageOrigin(2);
+                iz = (oz/obj.voxelSize(3))+obj.imageOrigin(3);
         end
         
         function showFilm(obj)
@@ -93,15 +93,19 @@ classdef Image
         end
         
         function ReflectedImage = ImageReflection(obj)
-             ReflectedImage = zeros(obj.dim(4),obj.dim(3),obj.dim(1),obj.dim(2)*2);
+             ReflectedImage = zeros(obj.dim(4),obj.dim(3),obj.dim(2)*2,obj.dim(1));
             for z = 1:obj.dim(3)
                 for t = 1:obj.dim(4)
                     matrix = squeeze(obj.voxels(t,z,:,:));
-                    ReflectedImage(t,z,:,1:obj.dim(2)) = matrix;
+                    ReflectedImage(t,z,1:obj.dim(2),:) = matrix;
                     fmatrix = flipud(matrix);
-                    ReflectedImage(t,z,:,obj.dim(2)+1:2*obj.dim(2)) = fmatrix;
+                    ReflectedImage(t,z,obj.dim(2)+1:2*obj.dim(2),:) = fmatrix;
                 end
             end
+            for t = 1:obj.dim(4)
+                    imagesc(abs(squeeze(ReflectedImage(t,1,:,:))));
+                    pause(0.03)  
+            end 
             
         end    
             
