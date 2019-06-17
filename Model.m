@@ -53,6 +53,22 @@ classdef Model
             
         end
         
+        function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj, nphi, phis, rs)
+            obj = Model(x,y,z,ntheta,nphi);
+            phis = obj.phis;
+            rs = obj.rs;
+            for i = 1:nphi+1
+                Xm = obj.r(i)*cos(obj.phis(i));
+                Ym = obj.r(i)*sin(obj.phis(i));
+            end
+               
+        end
+        
+        function isPixelInOrOut(obj)
+          
+            
+        end
+        
         function [mid] = getMiddle(obj)
             mid = zeros(1,3);
             mid(1) = obj.middle(1);
@@ -72,6 +88,7 @@ classdef Model
         function testModel(obj)
             obj
             obj.rs
+            obj.phis
         end
     end
 end
