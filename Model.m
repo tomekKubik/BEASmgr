@@ -172,6 +172,10 @@ classdef Model
             obj.rs
             obj.phis
         end
+        
+        function segResult = getModelImage(obj)
+            
+        end
     end
 end
 
