@@ -1,4 +1,4 @@
-classdef Image
+ classdef Image
     %IMAGE Representation of the image:
     %   voxel matrices
     %   image dimensions

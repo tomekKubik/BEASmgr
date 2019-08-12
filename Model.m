@@ -30,12 +30,12 @@ classdef Model
         function [xunit, yunit, obj] = create2DModelBasedOnElipse(obj,image,x,y,z,ra,rb,ntheta,nphi,valueInMM)
             obj = Model(x,y,z,ntheta,nphi);
             obj.image = image;
-      %      obj = Model (1,1,1,1,1);   
+            %      obj = Model (1,1,1,1,1);
             [ix, iy, iz] = getMatrixFromReal(obj.image, x, y, z);
             obj.middle(1) = ix;
             obj.middle(2) = iy;
             
-            if ntheta==1 
+            if ntheta==1
                 obj.thetas = pi/2;
             else
                 obj.thetas = linspace(0,pi,ntheta);
@@ -59,29 +59,29 @@ classdef Model
             obj.neighbourhood = createNeighbourhood(obj, valueInMM);
             test = 1;
         end
-       
+        
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
-                r = evalAt(obj.bspline,obj.phis(n));
-                Xm = r*cos(obj.phis(n));
-                Ym = r*sin(obj.phis(n));
+            r = evalAt(obj.bspline,obj.phis(n));
+            Xm = r*cos(obj.phis(n));
+            Ym = r*sin(obj.phis(n));
         end
         
         function [R, Phi] = calculateCartesianToPolar(obj, Xm,Ym)
             R = sqrt((Xm-obj.middle(1)).^2 + (Ym-obj.middle(2)).^2);
-            Phi = atan((Ym-obj.middle(2))/(Xm-obj.middle(1))); 
+            Phi = atan((Ym-obj.middle(2))/(Xm-obj.middle(1)));
         end
-             
+        
         function location = isPixelInOrOut(obj, x, y)
             epsi = 10^(-5);
             [R, Phi] = calculateCartesianToPolar(obj, x,y);
             if R == 0
-                Phi = 0;   
+                Phi = 0;
             end
             modelR = evalAt(obj.bspline,Phi);
-            location = 1/2*(1+2/pi*atan((R-modelR)/epsi));          
+            location = 1/2*(1+2/pi*atan((R-modelR)/epsi));
         end
         
-        function [u,v] = calculateAvrVOxelsIntensiti(obj, n, neighbourhood) %s¹siedztwo + pêtla po ca³oœci 
+        function [u,v] = calculateAvrVOxelsIntensiti(obj, n) %s¹siedztwo + pêtla po ca³oœci
             [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
             sumInside = 0;
             sumOutside = 0;
@@ -89,8 +89,8 @@ classdef Model
             weightsOutside = 0;
             xn=round(xn);
             yn=round(yn);
-            for x=xn-neighbourhood(2):1:xn+neighbourhood(2)
-                for y=yn-neighbourhood(1):1:yn+neighbourhood(1)
+            for x=xn-obj.neighbourhood(2):1:xn+obj.neighbourhood(2)
+                for y=yn-obj.neighbourhood(1):1:yn+obj.neighbourhood(1)
                     if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
                         continue
                     end
@@ -101,34 +101,34 @@ classdef Model
                     weightsOutside = weightsOutside + (1-hv);
                 end
             end
-            u = sumInside/weightsInside; 
+            u = sumInside/weightsInside;
             v = sumOutside/weightsOutside;
         end
-         
-        function fInside = fIn(obj,n,u, neighbourhood)
+        
+        function fInside = fIn(obj,n,u)
             [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
             fInside = 0;
             xn = round(xn);
             yn = round(yn);
-            for x=xn-neighbourhood(2):1:xn+neighbourhood(2)
-                for y=yn-neighbourhood(1):1:yn+neighbourhood(1)
-                     if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
+            for x=xn-obj.neighbourhood(2):1:xn+obj.neighbourhood(2)
+                for y=yn-obj.neighbourhood(1):1:yn+obj.neighbourhood(1)
+                    if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
                         continue
                     end
                     fInside = fInside + (obj.image.voxels(1,1,y,x) - u)^2;
                 end
             end
         end
-            
-           
-        function fOutside = fOut(obj,n, v, neighbourhood)
+        
+        
+        function fOutside = fOut(obj,n, v)
             [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
             xn = round(xn);
             yn = round(yn);
             fOutside = 0;
-            for x=xn-neighbourhood(2):1:xn+neighbourhood(2)
-                for y=yn-neighbourhood(1):1:yn+neighbourhood(1)
-                     if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
+            for x=xn-obj.neighbourhood(2):1:xn+obj.neighbourhood(2)
+                for y=yn-obj.neighbourhood(1):1:yn+obj.neighbourhood(1)
+                    if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
                         continue
                     end
                     fOutside = fOutside + (obj.image.voxels(1,1,y,x) - v)^2;
@@ -138,7 +138,7 @@ classdef Model
         
         function energy = energyOfModel(obj)   %w pêtli po wêz³ach
             energy = 0;
-            for n = 1:length(obj.phis)
+            for n = 1:obj.phis
                 [u, v] = calculateAvrVOxelsIntensiti(obj, n, obj.neighbourhood);
                 fInside = fIn(obj,n,u, obj.neighbourhood);
                 fOutside = fIn(obj,n,v, obj.neighbourhood);
@@ -148,8 +148,25 @@ classdef Model
         end
         
         function neighbourhood = createNeighbourhood(obj, valueInMM)
-            neighbourhood = [round(valueInMM/obj.image.voxelSize(2)), round(valueInMM/obj.image.voxelSize(1))];  
+            neighbourhood = [round(valueInMM/obj.image.voxelSize(2)), round(valueInMM/obj.image.voxelSize(1))];
             
+        end
+        
+        function gradient = gradientOfModel(obj,n)
+            [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
+            xn = round(xn);
+            yn = round(yn);
+            for x=xn-obj.neighbourhood(2):1:xn+obj.neighbourhood(2)
+                for y=yn-obj.neighbourhood(1):1:yn+obj.neighbourhood(1)
+                    if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
+                        continue
+                    end
+                    fInside = fIn(obj,n,u, obj.neighbourhood);
+                    fOutside = fIn(obj,n,v, obj.neighbourhood);
+                    gradient = fInside - fOutside;
+                end
+            end
+ 
         end
         
         function [mid] = getMiddle(obj)
@@ -174,8 +191,23 @@ classdef Model
         end
         
         function segResult = getModelImage(obj)
-            
+             segResult = zeros(obj.image.dim(4),obj.image.dim(3),obj.image.dim(2),obj.image.dim(1));
+                for x = 1:obj.image.dim(1)
+                    for y = 1:obj.image.dim(2)
+                        location = isPixelInOrOut(obj, x, y);
+                        if location <= 0.5
+                            segResult(:,:,y,x) = 1;
+                        else
+                            segResult(:,:,y,x) = 0;
+                        end
+                    end
+                end
+                for t = 1:obj.image.dim(4)
+                     imagesc(abs(squeeze(segResult(t,1,:,:))));
+                end
         end
     end
 end
+
+
 
