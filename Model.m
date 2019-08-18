@@ -11,7 +11,6 @@ classdef Model
         rs;
         bspline;
         image Image
-        app app1
         neighbourhood
     end
     
