@@ -66,8 +66,17 @@ classdef Model
         end
         
         function [R, Phi] = calculateCartesianToPolar(obj, Xm,Ym)
-            R = sqrt((Xm-obj.middle(1)).^2 + (Ym-obj.middle(2)).^2);
-            Phi = atan((Ym-obj.middle(2))/(Xm-obj.middle(1)));
+            diffX = (Xm-obj.middle(1))*obj.image.voxelSize(2);
+            diffY = (Ym-obj.middle(2))*obj.image.voxelSize(1);
+            if diffY>=0 && diffX>=0
+                shift=0;
+            elseif diffX<0
+                shift=pi;
+            else
+                shift=2*pi;
+            end
+            R = sqrt(diffX^2 + diffY^2);
+            Phi = atan(diffY/diffX)+shift;
         end
         
         function location = isPixelInOrOut(obj, x, y)
@@ -137,10 +146,10 @@ classdef Model
         
         function energy = energyOfModel(obj)   %w pêtli po wêz³ach
             energy = 0;
-            for n = 1:obj.phis
-                [u, v] = calculateAvrVOxelsIntensiti(obj, n, obj.neighbourhood);
-                fInside = fIn(obj,n,u, obj.neighbourhood);
-                fOutside = fIn(obj,n,v, obj.neighbourhood);
+            for n = 1:length(obj.phis)
+                [u, v] = calculateAvrVOxelsIntensiti(obj, n);
+                fInside = fIn(obj,n,u);
+                fOutside = fIn(obj,n,v);
                 energy = energy + fInside + fOutside;
             end
             disp(['Energy of the model is: ', num2str(energy)])
