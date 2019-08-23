@@ -60,8 +60,8 @@ classdef Model
         
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
             r = evalAt(obj.bspline,obj.phis(n));
-            Xm = r*cos(obj.phis(n));
-            Ym = r*sin(obj.phis(n));
+            Xm = obj.middle(2)+r*cos(obj.phis(n))/obj.image.voxelSize(2);
+            Ym = obj.middle(1)+r*sin(obj.phis(n))/obj.image.voxelSize(1);
         end
         
         function [R, Phi] = calculateCartesianToPolar(obj, Xm,Ym)
@@ -98,12 +98,12 @@ classdef Model
             yn=round(yn);
             for x=xn-obj.neighbourhood(2):1:xn+obj.neighbourhood(2)
                 for y=yn-obj.neighbourhood(1):1:yn+obj.neighbourhood(1)
-                    if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
+                    if x<1 || y<1 || x>obj.image.dim(2) || y>obj.image.dim(1)
                         continue
                     end
                     hv = isPixelInOrOut(obj,x,y);
-                    sumInside = sumInside + obj.image.voxels(1,1,y,x)*hv;
-                    sumOutside = sumOutside + obj.image.voxels(1,1,y,x)*(1-hv);
+                    sumInside = sumInside + obj.image.voxels(1,1,x,y)*hv;
+                    sumOutside = sumOutside + obj.image.voxels(1,1,x,y)*(1-hv);
                     weightsInside = weightsInside + hv;
                     weightsOutside = weightsOutside + (1-hv);
                 end
@@ -163,18 +163,17 @@ classdef Model
             [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
             xn = round(xn);
             yn = round(yn);
+            [u, v] = calculateAvrVOxelsIntensiti(obj, n);
             for x=xn-obj.neighbourhood(2):1:xn+obj.neighbourhood(2)
                 for y=yn-obj.neighbourhood(1):1:yn+obj.neighbourhood(1)
                     if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
                         continue
                     end
-                    [u, v] = calculateAvrVOxelsIntensiti(obj, n);
-                    fInside = fIn(obj,n,u);
-                    fOutside = fIn(obj,n,v);
-                    gradient = fInside - fOutside;
                 end
             end
- 
+            fInside = fIn(obj,n,u);
+            fOutside = fIn(obj,n,v);
+            gradient = fInside - fOutside;
         end
         
         function [mid] = getMiddle(obj)
@@ -220,26 +219,27 @@ classdef Model
             nWrongIter = 0;
             nIter = 0;
             for i=1:iter
-                dsplmc = zeros(length(obj.phis));
+                dsplmc = zeros(1,length(obj.rs));
                 for n=1:length(dsplmc)
-                    gradient(n) = gradientOfModel(obj,n);
-                    dsplmc(n) = gradient(n)*lambda;
-                    %  end
-                    obj.phis(n) = obj.phis(n) - dsplmc(n);
-                    newEnergy = energyOfModel(obj);
-                    if newEnergy < startEnergy
-                        startEnergy = newEnergy;
-                        lambda = lambda*lambdaP;
-                    else
-                        obj.phis(n) = obj.phis(n) + dsplmc(n);
-                        lambda = lambda/lambdaN;
-                        nWrongIter = nWrongIter + 1;
-                        if nWrongIter == wIter
-                            break
-                        end
+                    gradient = gradientOfModel(obj,n);
+                    dsplmc(n) = gradient*lambda;
+                    obj.rs(n) = obj.rs(n) + dsplmc(n);
+                end
+                    
+                newEnergy = energyOfModel(obj);
+                if newEnergy < startEnergy
+                    startEnergy = newEnergy;
+                    lambda = lambda*lambdaP;
+                    nWrongIter = 0;
+                else
+                    obj.phis(n) = obj.phis(n) + dsplmc(n);
+                    lambda = lambda/lambdaN;
+                    nWrongIter = nWrongIter + 1;
+                    if nWrongIter == wIter
+                        break
                     end
                 end
-                nIter = nIter + 1;
+            nIter = nIter + 1;
             end
         end
     end
