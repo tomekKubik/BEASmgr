@@ -56,7 +56,6 @@ classdef Model
             weights = obj.rs;
             obj.bspline = fastBSpline(knots,weights);
             obj.neighbourhood = createNeighbourhood(obj, valueInMM);
-            test = 1;
         end
         
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
@@ -169,8 +168,9 @@ classdef Model
                     if x<1 || y<1 || x>obj.image.dim(1) || y>obj.image.dim(2)
                         continue
                     end
-                    fInside = fIn(obj,n,u, obj.neighbourhood);
-                    fOutside = fIn(obj,n,v, obj.neighbourhood);
+                    [u, v] = calculateAvrVOxelsIntensiti(obj, n);
+                    fInside = fIn(obj,n,u);
+                    fOutside = fIn(obj,n,v);
                     gradient = fInside - fOutside;
                 end
             end
@@ -210,9 +210,37 @@ classdef Model
                         end
                     end
                 end
-                for t = 1:obj.image.dim(4)
-                     imagesc(abs(squeeze(segResult(t,1,:,:))));
+%                 for t = 1:obj.image.dim(4)
+%                      imagesc(abs(squeeze(segResult(t,1,:,:))));
+%                 end
+        end
+        
+        function nIter = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
+            startEnergy = energyOfModel(obj);
+            nWrongIter = 0;
+            nIter = 0;
+            for i=1:iter
+                dsplmc = zeros(length(obj.phis));
+                for n=1:length(dsplmc)
+                    gradient(n) = gradientOfModel(obj,n);
+                    dsplmc(n) = gradient(n)*lambda;
+                    %  end
+                    obj.phis(n) = obj.phis(n) - dsplmc(n);
+                    newEnergy = energyOfModel(obj);
+                    if newEnergy < startEnergy
+                        startEnergy = newEnergy;
+                        lambda = lambda*lambdaP;
+                    else
+                        obj.phis(n) = obj.phis(n) + dsplmc(n);
+                        lambda = lambda/lambdaN;
+                        nWrongIter = nWrongIter + 1;
+                        if nWrongIter == wIter
+                            break
+                        end
+                    end
                 end
+                nIter = nIter + 1;
+            end
         end
     end
 end
