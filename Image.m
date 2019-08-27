@@ -6,20 +6,26 @@
     %   time vector
     %   image origin (point 0,0,0)
     
+    properties (Constant)
+        DIR_X = 2;
+        DIR_Y = 1;
+        DIR_Z = 3;
+        DIR_T = 4;
+    end
+    
     properties (Access = public)
         time; % 1-D matrix containing time values in seconds  
         dim; % 1-D 4 element matrix containing dimensions: [nx ny nz nt]
         voxelSize; % 1-D 3 element matrix containg voxel sizes in direction: [dx dy dz]
         imageOrigin; %  1-D 3 element matrix containg location of the image origin: [ox oy oz] skalowanie
-        voxels; % 4-D matrix containg all image voxels: [time z x y]; 
-        
+        voxels; % 4-D matrix containg all image voxels: [time z x y];  
     end
     
     methods (Access = public)
         function obj = Image(nx,ny,nz,nt)
             %IMAGE Constructs an empty image of the given dimensions.
-            obj.voxels = zeros(nt,nz,nx,ny);
-            obj.dim = [nx ny nz nt];
+            obj.voxels = zeros(ny,nx,nz,nt);
+            obj.dim = [ny nx nz nt];
             obj.voxelSize = [1 1 1];
             obj.imageOrigin = [0 0 0];
             obj.time = 1:nt; 
@@ -27,87 +33,68 @@
         
         function obj = read2DImageFromScript(obj,filePath,fileName)
             %IMAGE Read image from file selected by user //// 
-%             [fileName,filePath] = uigetfile('*.m','Select an image file');
-%             if  isequal([filePath fileName],0)               
-%                  message1 = 'Error! Please select an image file';
-%                  disp(message1);
-%                 return 
-%             else
-% %                 f = uifgure;
-% %                 message2 = ['User selected ', fullfile(filePath,fileName)];
-% %                 uialert(f, message2,'Icon', 'info');
-%                 disp(['User selected ', fullfile(filePath,fileName)]);
-%                 % Wykonaj skrypt z pliku
+                % Wykonaj skrypt z pliku
                 run(fullfile(filePath,fileName))
                 macierz = BB_data_decim;
 %dim
                 obj = Image(1,1,1,1);
                 [ny, nx, nt] = size(BB_data_decim);       %zm
-                obj.dim(1) = nx;
-                obj.dim(2) = ny;
-                obj.dim(3) = 1;
-                obj.dim(4) = nt;
+                obj.dim(obj.DIR_X) = nx;
+                obj.dim(obj.DIR_Y) = ny;
+                obj.dim(obj.DIR_Z) = 1;
+                obj.dim(obj.DIR_T) = nt;
 %voxelSize
-                obj.voxelSize(1) = voxS(2); %x
-                obj.voxelSize(2) = voxS(1); %y
-                if obj.dim(3)==1
-                    obj.voxelSize(3)=1;
+                obj.voxelSize(obj.DIR_X) = voxS(1); %x
+                obj.voxelSize(obj.DIR_Y) = voxS(2); %y
+                if obj.dim(obj.DIR_Z)==1
+                    obj.voxelSize(obj.DIR_Z)=1;
                 else
-                    obj.voxelSize(3) = voxS(3);  
+                    obj.voxelSize(obj.DIR_Z) = voxS(3);  
                 end
 %time
-                obj.time = linspace(1,60,obj.dim(4));
+                obj.time = linspace(1,60,obj.dim(obj.DIR_T));
 %imageOrgin
-                obj.imageOrigin(1) = round(obj.dim(1)/2);
-                obj.imageOrigin(2) = round(obj.dim(2)/2);
-                obj.imageOrigin(3) = 1;
+                obj.imageOrigin(obj.DIR_X) = round(obj.dim(obj.DIR_X)/2);
+                obj.imageOrigin(obj.DIR_Y) = round(obj.dim(obj.DIR_Y)/2);
+                obj.imageOrigin(obj.DIR_Z) = 1;
 %voxels 
-                obj.voxels = zeros(obj.dim(4),obj.dim(3),obj.dim(2),obj.dim(1)); %zm
-                for t = 1:obj.dim(4)
-                    for z = 1:obj.dim(3)
-                        obj.voxels(t,z,:,:) = macierz(:,:,t);
+                tmpVoxels = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y),obj.dim(obj.DIR_X)); %zm
+                for t = 1:obj.dim(obj.DIR_T)
+                    for z = 1:obj.dim(obj.DIR_Z)
+                        tmpVoxels(t,z,:,:) = macierz(:,:,t);
                     end
-                end 
-%              end
+                end
+                obj.voxels = permute(tmpVoxels,[3 4 2 1]);
         end
         
         function [ox, oy, oz] = getRealFromMatrix(obj,ix, iy, iz)
-                ox = obj.voxelSize(1)*ix-obj.voxelSize(1)*obj.imageOrigin(1);
-                oy = obj.voxelSize(2)*iy-obj.voxelSize(2)*obj.imageOrigin(2);
-                oz = obj.voxelSize(3)*iz-obj.voxelSize(3)*obj.imageOrigin(3);
+                ox = obj.voxelSize(obj.DIR_X)*ix-obj.voxelSize(obj.DIR_X)*obj.imageOrigin(obj.DIR_X);
+                oy = obj.voxelSize(obj.DIR_Y)*iy-obj.voxelSize(obj.DIR_Y)*obj.imageOrigin(obj.DIR_Y);
+                oz = obj.voxelSize(obj.DIR_Z)*iz-obj.voxelSize(obj.DIR_Z)*obj.imageOrigin(obj.DIR_Z);
         end
         
         function [ix, iy, iz] = getMatrixFromReal(obj,ox, oy, oz)
-                ix = (ox/obj.voxelSize(1))+obj.imageOrigin(1);
-                iy = (oy/obj.voxelSize(2))+obj.imageOrigin(2);
-                iz = (oz/obj.voxelSize(3))+obj.imageOrigin(3);
+                ix = (ox/obj.voxelSize(obj.DIR_X))+obj.imageOrigin(obj.DIR_X);
+                iy = (oy/obj.voxelSize(obj.DIR_Y))+obj.imageOrigin(obj.DIR_Y);
+                iz = (oz/obj.voxelSize(obj.DIR_Z))+obj.imageOrigin(obj.DIR_Z);
         end
         
-        function showFilm(obj)
-              for t = 1:obj.dim(4)
-                    imagesc(abs(squeeze(obj.voxels(t,1,:,:))));
-                    hold on 
-                    plot(obj.imageOrigin(2),obj.imageOrigin(1),'r+', 'MarkerSize', 10);
-                    pause(0.03)  
-              end 
-        end
-        
-        function ReflectedImage = ImageReflection(obj)
-             ReflectedImage = zeros(obj.dim(4),obj.dim(3),obj.dim(2)*2,obj.dim(1));
-            for z = 1:obj.dim(3)
-                for t = 1:obj.dim(4)
-                    matrix = squeeze(obj.voxels(t,z,:,:));
-                    ReflectedImage(t,z,1:obj.dim(2),:) = matrix;
-                    fmatrix = flipud(matrix);
-                    ReflectedImage(t,z,obj.dim(2)+1:2*obj.dim(2),:) = fmatrix;
-                end
-            end
-            for t = 1:obj.dim(4)
-                    imagesc(abs(squeeze(ReflectedImage(t,1,:,:))));
-                    pause(0.03)  
-            end 
-            
-        end    
+%         function ReflectedImage = ImageReflection(obj)
+%              ReflectedImage = zeros(obj.dim(4),obj.dim(3),obj.dim(2)*2,obj.dim(1));
+%             for z = 1:obj.dim(3)
+%                 for t = 1:obj.dim(4)
+%                     matrix = squeeze(obj.voxels(t,z,:,:));
+%                     ReflectedImage(t,z,1:obj.dim(2),:) = matrix;
+%                     fmatrix = flipud(matrix);
+%                     ReflectedImage(t,z,obj.dim(2)+1:2*obj.dim(2),:) = fmatrix;
+%                 end
+%             end
+%             for t = 1:obj.dim(4)
+%                     imagesc(abs(squeeze(ReflectedImage(t,1,:,:))));
+%                     pause(0.03)  
+%             end 
+%             
+%         end    
             
     end
 end
