@@ -60,13 +60,13 @@ classdef Model
         
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
             r = evalAt(obj.bspline,obj.phis(n));
-            Xm = obj.middle(Image.DIR_X)+r*cos(obj.phis(n))/obj.image.voxelSize(Image.DIR_X);
-            Ym = obj.middle(Image.DIR_Y)+r*sin(obj.phis(n))/obj.image.voxelSize(Image.DIR_Y);
+            Xm = obj.middle(Image.DIR_X)+r*cos(obj.phis(n))*obj.image.voxelSize(Image.DIR_X);
+            Ym = obj.middle(Image.DIR_Y)+r*sin(obj.phis(n))*obj.image.voxelSize(Image.DIR_Y);
         end
         
         function [R, Phi] = calculateCartesianToPolar(obj, Xm,Ym)
-            diffX = (Xm-obj.middle(Image.DIR_X))*obj.image.voxelSize(Image.DIR_X);
-            diffY = (Ym-obj.middle(Image.DIR_Y))*obj.image.voxelSize(Image.DIR_Y);
+            diffX = (Xm-obj.middle(Image.DIR_X))/obj.image.voxelSize(Image.DIR_X);
+            diffY = (Ym-obj.middle(Image.DIR_Y))/obj.image.voxelSize(Image.DIR_Y);
             if diffY>=0 && diffX>=0
                 shift=0;
             elseif diffX<0
@@ -182,14 +182,14 @@ classdef Model
         end
         
         function segResult = getModelImage(obj)
-             segResult = zeros(obj.image.dim(Image.DIR_X),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_T));
+             segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
              for x = 1:obj.image.dim(Image.DIR_X)
                  for y = 1:obj.image.dim(Image.DIR_Y)
                      location = isPixelInOrOut(obj, x, y);
                      if location <= 0.5
-                         segResult(y,x,:,:) = 1;
+                         segResult(:,:,y,x) = 1;
                      else
-                         segResult(y,x,:,:) = 0;
+                         segResult(:,:,y,x) = 0;
                      end
                  end
              end

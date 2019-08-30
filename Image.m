@@ -58,7 +58,7 @@
                 obj.imageOrigin(obj.DIR_Y) = round(obj.dim(obj.DIR_Y)/2);
                 obj.imageOrigin(obj.DIR_Z) = 1;
 %voxels 
-                tmpVoxels = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y),obj.dim(obj.DIR_X)); %zm
+                tmpVoxels = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y),obj.dim(obj.DIR_X)); 
                 for t = 1:obj.dim(obj.DIR_T)
                     for z = 1:obj.dim(obj.DIR_Z)
                         tmpVoxels(t,z,:,:) = macierz(:,:,t);
