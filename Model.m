@@ -60,13 +60,13 @@ classdef Model
         
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
             r = evalAt(obj.bspline,obj.phis(n));
-            Xm = obj.middle(Image.DIR_X)+r*cos(obj.phis(n))*obj.image.voxelSize(Image.DIR_X);
-            Ym = obj.middle(Image.DIR_Y)+r*sin(obj.phis(n))*obj.image.voxelSize(Image.DIR_Y);
+            Xm = obj.middle(Image.DIR_X)+r*cos(obj.phis(n))/obj.image.voxelSize(Image.DIR_X);
+            Ym = obj.middle(Image.DIR_Y)+r*sin(obj.phis(n))/obj.image.voxelSize(Image.DIR_Y);
         end
         
         function [R, Phi] = calculateCartesianToPolar(obj, Xm,Ym)
-            diffX = (Xm-obj.middle(Image.DIR_X))/obj.image.voxelSize(Image.DIR_X);
-            diffY = (Ym-obj.middle(Image.DIR_Y))/obj.image.voxelSize(Image.DIR_Y);
+            diffX = (Xm-obj.middle(Image.DIR_X))*obj.image.voxelSize(Image.DIR_X);
+            diffY = (Ym-obj.middle(Image.DIR_Y))*obj.image.voxelSize(Image.DIR_Y);
             if diffY>=0 && diffX>=0
                 shift=0;
             elseif diffX<0
@@ -85,7 +85,7 @@ classdef Model
                 Phi = 0;
             end
             modelR = evalAt(obj.bspline,Phi);
-            location = 1/2*(1+2/pi*atan((R-modelR)/epsi));
+            location = 1/2*(1+2/pi*atan((modelR-R)/epsi));
         end
         
         function [u,v] = calculateAvrVOxelsIntensiti(obj, n) %s�siedztwo + p�tla po ca�o�ci
@@ -160,17 +160,7 @@ classdef Model
         end
         
         function gradient = gradientOfModel(obj,n)
-            [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
-            xn = round(xn);
-            yn = round(yn);
             [u, v] = calculateAvrVOxelsIntensiti(obj, n);
-            for x=xn-obj.neighbourhood(Image.DIR_X):1:xn+obj.neighbourhood(Image.DIR_X)
-                for y=yn-obj.neighbourhood(Image.DIR_Y):1:yn+obj.neighbourhood(Image.DIR_Y)
-                    if x<1 || y<1 || x>obj.image.dim(Image.DIR_X) || y>obj.image.dim(Image.DIR_Y)
-                        continue
-                    end
-                end
-            end
             fInside = fIn(obj,n,u);
             fOutside = fIn(obj,n,v);
             gradient = fInside - fOutside;
@@ -200,6 +190,7 @@ classdef Model
             nWrongIter = 0;
             nIter = 0;
             for i=1:iter
+                disp(['Iteration ' num2str(i)]);
                 dsplmc = zeros(1,length(obj.rs));
                 for n=1:length(dsplmc)
                     gradient = gradientOfModel(obj,n);
@@ -213,7 +204,7 @@ classdef Model
                     lambda = lambda*lambdaP;
                     nWrongIter = 0;
                 else
-                    obj.phis(n) = obj.phis(n) + dsplmc(n);
+                    obj.rs(n) = obj.rs(n) - dsplmc(n);
                     lambda = lambda/lambdaN;
                     nWrongIter = nWrongIter + 1;
                     if nWrongIter == wIter
