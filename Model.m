@@ -58,6 +58,10 @@ classdef Model
             obj.neighbourhood = createNeighbourhood(obj, valueInMM);
         end
         
+        function obj = updateBsplineNodes(obj)
+            obj.bspline = fastBSpline(obj.bspline.knots,obj.rs);
+        end
+                
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
             r = evalAt(obj.bspline,obj.phis(n));
             Xm = obj.middle(Image.DIR_X)+r*cos(obj.phis(n))/obj.image.voxelSize(Image.DIR_X);
@@ -185,26 +189,30 @@ classdef Model
              end
         end
         
-        function nIter = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
+        function obj = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
+            disp('Segmentation started.');
             startEnergy = energyOfModel(obj);
             nWrongIter = 0;
             nIter = 0;
             for i=1:iter
-                disp(['Iteration ' num2str(i)]);
+                disp(['Iteration = ' num2str(i) ', wrong iterations = ' num2str(nWrongIter) ', lambda = ' num2str(lambda)]);
                 dsplmc = zeros(1,length(obj.rs));
                 for n=1:length(dsplmc)
                     gradient = gradientOfModel(obj,n);
                     dsplmc(n) = gradient*lambda;
                     obj.rs(n) = obj.rs(n) + dsplmc(n);
                 end
-                    
+                obj = updateBsplineNodes(obj);
                 newEnergy = energyOfModel(obj);
                 if newEnergy < startEnergy
                     startEnergy = newEnergy;
                     lambda = lambda*lambdaP;
                     nWrongIter = 0;
                 else
-                    obj.rs(n) = obj.rs(n) - dsplmc(n);
+                    for n=1:length(dsplmc)
+                        obj.rs(n) = obj.rs(n)-dsplmc(n);
+                    end
+                    updateBsplineNodes(obj);
                     lambda = lambda/lambdaN;
                     nWrongIter = nWrongIter + 1;
                     if nWrongIter == wIter
@@ -213,6 +221,7 @@ classdef Model
                 end
             nIter = nIter + 1;
             end
+            disp(['Segmentation finished after ' num2str(nIter) ' iterations.']);
         end
     end
 end
