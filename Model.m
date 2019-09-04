@@ -83,12 +83,13 @@ classdef Model
         end
         
         function location = isPixelInOrOut(obj, x, y)
+            epsi = 10^(-5);
             [R, Phi] = calculateCartesianToPolar(obj, x,y);
             if R == 0
                 Phi = 0;
             end
             modelR = evalAt(obj.bspline,Phi);
-            location = 1/2*(1+2/pi*atan((modelR-R)/eps));
+            location = 1/2*(1+2/pi*atan((modelR-R)/epsi));
         end
         
         function [u,v] = calculateAvrVOxelsIntensiti(obj, n) %s�siedztwo + p�tla po ca�o�ci
@@ -161,7 +162,7 @@ classdef Model
             for n = 1:length(obj.phis)
                 [u, v] = calculateAvrVOxelsIntensiti(obj, n);
                 fInside = fIn(obj,n,u);
-                fOutside = fIn(obj,n,v);
+                fOutside = fOut(obj,n,v);
                 energy = energy + fInside + fOutside;
             end
             disp(['Energy of the model is: ', num2str(energy)])
@@ -204,6 +205,7 @@ classdef Model
             nWrongIter = 0;
             nIter = 0;
             for i=1:iter
+                nIter = nIter + 1;
                 disp(['Iteration = ' num2str(i) ', wrong iterations = ' num2str(nWrongIter) ', lambda = ' num2str(lambda)]);
                 dsplmc = zeros(1,length(obj.rs));
                 oldRs = obj.rs;
@@ -235,7 +237,6 @@ classdef Model
                         break
                     end
                 end
-            nIter = nIter + 1;
             end
             disp(['Segmentation finished after ' num2str(nIter) ' iterations.']);
         end
