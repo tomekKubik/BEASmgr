@@ -83,13 +83,12 @@ classdef Model
         end
         
         function location = isPixelInOrOut(obj, x, y)
-            epsi = 10^(-5);
             [R, Phi] = calculateCartesianToPolar(obj, x,y);
             if R == 0
                 Phi = 0;
             end
             modelR = evalAt(obj.bspline,Phi);
-            location = 1/2*(1+2/pi*atan((modelR-R)/epsi));
+            location = 1/2*(1+2/pi*atan((modelR-R)/eps));
         end
         
         function [u,v] = calculateAvrVOxelsIntensiti(obj, n) %s�siedztwo + p�tla po ca�o�ci
@@ -112,8 +111,16 @@ classdef Model
                     weightsOutside = weightsOutside + (1-hv);
                 end
             end
-            u = sumInside/weightsInside;
-            v = sumOutside/weightsOutside;
+            if sumInside==0 && weightsInside==0
+                u = 0;
+            else
+                u = sumInside/weightsInside;
+            end
+            if sumOutside==0 && weightsOutside==0
+                v = 0;
+            else
+                v = sumOutside/weightsOutside;
+            end
         end
         
         function fInside = fIn(obj,n,u)
@@ -126,7 +133,8 @@ classdef Model
                     if x<1 || y<1 || x>obj.image.dim(Image.DIR_X) || y>obj.image.dim(Image.DIR_Y)
                         continue
                     end
-                    fInside = fInside + (obj.image.voxels(y,x,1,1) - u)^2;
+                    location = isPixelInOrOut(obj, x, y);
+                    fInside = fInside + location*((obj.image.voxels(y,x,1,1) - u)^2);
                 end
             end
         end
@@ -142,7 +150,8 @@ classdef Model
                     if x<1 || y<1 || x>obj.image.dim(Image.DIR_X) || y>obj.image.dim(Image.DIR_Y)
                         continue
                     end
-                    fOutside = fOutside + (obj.image.voxels(y,x,1,1) - v)^2;
+                    location = isPixelInOrOut(obj, x, y);
+                    fOutside = fOutside + (1-location)*(obj.image.voxels(y,x,1,1) - v)^2;
                 end
             end
         end
@@ -166,8 +175,8 @@ classdef Model
         function gradient = gradientOfModel(obj,n)
             [u, v] = calculateAvrVOxelsIntensiti(obj, n);
             fInside = fIn(obj,n,u);
-            fOutside = fIn(obj,n,v);
-            gradient = fInside - fOutside;
+            fOutside = fOut(obj,n,v);
+            gradient = fOutside - fInside;
         end
         
         function testModel(obj)
@@ -197,11 +206,20 @@ classdef Model
             for i=1:iter
                 disp(['Iteration = ' num2str(i) ', wrong iterations = ' num2str(nWrongIter) ', lambda = ' num2str(lambda)]);
                 dsplmc = zeros(1,length(obj.rs));
+                oldRs = obj.rs;
                 for n=1:length(dsplmc)
-                    gradient = gradientOfModel(obj,n);
-                    dsplmc(n) = gradient*lambda;
-                    obj.rs(n) = obj.rs(n) + dsplmc(n);
+                    dsplmc(n) = gradientOfModel(obj,n);
                 end
+                mm = minmax(dsplmc);
+                dsplmc = (dsplmc-mm(1))./(mm(2)-mm(1));
+                for n=1:length(dsplmc)
+                    move = dsplmc(n)*lambda;
+                    obj.rs(n) = obj.rs(n) + move;
+                    if obj.rs(n)<0
+                        obj.rs(n)=0;
+                    end
+                end
+                obj.rs = medfilt1(obj.rs);
                 obj = updateBsplineNodes(obj);
                 newEnergy = energyOfModel(obj);
                 if newEnergy < startEnergy
@@ -209,10 +227,8 @@ classdef Model
                     lambda = lambda*lambdaP;
                     nWrongIter = 0;
                 else
-                    for n=1:length(dsplmc)
-                        obj.rs(n) = obj.rs(n)-dsplmc(n);
-                    end
-                    updateBsplineNodes(obj);
+                    obj.rs = oldRs;
+                    obj = updateBsplineNodes(obj);
                     lambda = lambda/lambdaN;
                     nWrongIter = nWrongIter + 1;
                     if nWrongIter == wIter
