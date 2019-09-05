@@ -212,7 +212,7 @@ classdef Model
                     for n=1:length(dsplmc)
                         obj.rs(n) = obj.rs(n)-dsplmc(n);
                     end
-                    updateBsplineNodes(obj);
+                    obj = updateBsplineNodes(obj);
                     lambda = lambda/lambdaN;
                     nWrongIter = nWrongIter + 1;
                     if nWrongIter == wIter
