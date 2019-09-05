@@ -163,7 +163,9 @@ classdef Model
                 [u, v] = calculateAvrVOxelsIntensiti(obj, n);
                 fInside = fIn(obj,n,u);
                 fOutside = fOut(obj,n,v);
+                %disp(['Energy of the node ' int2str(n) ' = ' num2str(fInside+fOutside)]);
                 energy = energy + fInside + fOutside;
+                %disp(['Sum of the energy = ' num2str(energy)]);
             end
             disp(['Energy of the model is: ', num2str(energy)])
         end
@@ -212,8 +214,10 @@ classdef Model
                 for n=1:length(dsplmc)
                     dsplmc(n) = gradientOfModel(obj,n);
                 end
-                mm = minmax(dsplmc);
-                dsplmc = (dsplmc-mm(1))./(mm(2)-mm(1));
+                minD = min(dsplmc);
+                maxD = max(dsplmc);
+                maxVal = max([abs(minD),abs(maxD)]);
+                dsplmc = dsplmc./maxVal;
                 for n=1:length(dsplmc)
                     move = dsplmc(n)*lambda;
                     obj.rs(n) = obj.rs(n) + move;
@@ -229,9 +233,7 @@ classdef Model
                     lambda = lambda*lambdaP;
                     nWrongIter = 0;
                 else
-                    for n=1:length(dsplmc)
-                        obj.rs(n) = obj.rs(n)-dsplmc(n);
-                    end
+                    obj.rs = oldRs;
                     obj = updateBsplineNodes(obj);
                     lambda = lambda/lambdaN;
                     nWrongIter = nWrongIter + 1;
