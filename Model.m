@@ -172,7 +172,6 @@ classdef Model
         
         function neighbourhood = createNeighbourhood(obj, valueInMM)
             neighbourhood = [round(valueInMM/obj.image.voxelSize(Image.DIR_Y)), round(valueInMM/obj.image.voxelSize(Image.DIR_X))];
-            
         end
         
         function gradient = gradientOfModel(obj,n)
