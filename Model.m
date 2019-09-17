@@ -163,7 +163,9 @@ classdef Model
                 [u, v] = calculateAvrVOxelsIntensiti(obj, n);
                 fInside = fIn(obj,n,u);
                 fOutside = fOut(obj,n,v);
-                %disp(['Energy of the node ' int2str(n) ' = ' num2str(fInside+fOutside)]);
+                %if n==28
+                %    disp(['Energy of the node ' int2str(n) ' = ' num2str(fInside+fOutside)]);
+                %end
                 energy = energy + fInside + fOutside;
                 %disp(['Sum of the energy = ' num2str(energy)]);
             end
