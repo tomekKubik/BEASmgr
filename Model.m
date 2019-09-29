@@ -26,7 +26,7 @@ classdef Model
             obj.neighbourhood = [5,5];
         end
         
-        function [xunit, yunit, obj] = create2DModelBasedOnElipse(obj,image,x,y,z,ra,rb,ntheta,nphi,valueInMM)
+        function [xunit, yunit, obj, firstPhis] = create2DModelBasedOnElipse(obj,image,x,y,z,ra,rb,ntheta,nphi,valueInMM)
             obj = Model(x,y,z,ntheta,nphi);
             obj.image = image;
             %      obj = Model (1,1,1,1,1);
@@ -41,6 +41,7 @@ classdef Model
             end
             
             obj.phis = linspace(0,2*pi,nphi+1);
+            firstPhis = linspace(0,2*pi,nphi+1);
             
             obj.rs = ones(ntheta,nphi+1);
             b = (ra^2*(sin(obj.phis).^2)+rb^2*(cos(obj.phis).^2));
@@ -50,7 +51,7 @@ classdef Model
             
             xunit = (ra * cos(obj.phis) / image.voxelSize(Image.DIR_X)) + ix;
             yunit = (rb * sin(obj.phis) / image.voxelSize(Image.DIR_Y)) + iy;
-            
+           
             knots = [obj.phis];
             knots = [-knots(2) knots knots(length(knots))+knots(2)];
             weights = obj.rs;
