@@ -51,7 +51,7 @@ classdef Model
             
             xunit = (ra * cos(obj.phis) / image.voxelSize(Image.DIR_X)) + ix;
             yunit = (rb * sin(obj.phis) / image.voxelSize(Image.DIR_Y)) + iy;
-           
+            
             knots = [obj.phis];
             knots = [-knots(2) knots knots(length(knots))+knots(2)];
             weights = obj.rs;
@@ -65,6 +65,11 @@ classdef Model
                 
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
             r = evalAt(obj.bspline,obj.phis(n));
+            Xm = obj.middle(Image.DIR_X)+r*cos(obj.phis(n))/obj.image.voxelSize(Image.DIR_X);
+            Ym = obj.middle(Image.DIR_Y)+r*sin(obj.phis(n))/obj.image.voxelSize(Image.DIR_Y);
+        end
+        
+        function [Xm, Ym] = calculateCoordinatesOfTheR(obj,n,r)
             Xm = obj.middle(Image.DIR_X)+r*cos(obj.phis(n))/obj.image.voxelSize(Image.DIR_X);
             Ym = obj.middle(Image.DIR_Y)+r*sin(obj.phis(n))/obj.image.voxelSize(Image.DIR_Y);
         end
@@ -93,8 +98,8 @@ classdef Model
             location = 1/2*(1+2/pi*atan((modelR-R)/epsi));
         end
         
-        function [u,v] = calculateAvrVOxelsIntensiti(obj, n) %s�siedztwo + p�tla po ca�o�ci
-            [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
+        function [u,v] = calculateAvrVOxelsIntensiti(obj, n, middle) %s�siedztwo + p�tla po ca�o�ci
+            [xn, yn] = calculateCoordinatesOfTheR(obj,n,middle);
             sumInside = 0;
             sumOutside = 0;
             weightsInside = 0;
@@ -125,8 +130,8 @@ classdef Model
             end
         end
         
-        function fInside = fIn(obj,n,u)
-            [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
+        function fInside = fIn(obj,n,middle,u)
+            [xn, yn] = calculateCoordinatesOfTheR(obj,n,middle);
             fInside = 0;
             xn = round(xn);
             yn = round(yn);
@@ -142,8 +147,8 @@ classdef Model
         end
         
         
-        function fOutside = fOut(obj,n, v)
-            [xn, yn] = calculateCoordinatesOfTheNode2D(obj,n);
+        function fOutside = fOut(obj,n,middle,v)
+            [xn, yn] = calculateCoordinatesOfTheR(obj,n,middle);
             xn = round(xn);
             yn = round(yn);
             fOutside = 0;
@@ -158,12 +163,12 @@ classdef Model
             end
         end
         
-        function energy = energyOfModel(obj)   %w p�tli po w�z�ach
+        function energy = energyOfModel(obj,middleRs)   %w p�tli po w�z�ach
             energy = 0;
             for n = 1:length(obj.phis)
-                [u, v] = calculateAvrVOxelsIntensiti(obj, n);
-                fInside = fIn(obj,n,u);
-                fOutside = fOut(obj,n,v);
+                [u, v] = calculateAvrVOxelsIntensiti(obj,n,middleRs(n));
+                fInside = fIn(obj,n,middleRs(n),u);
+                fOutside = fOut(obj,n,middleRs(n),v);
                 %if n==28
                 %    disp(['Energy of the node ' int2str(n) ' = ' num2str(fInside+fOutside)]);
                 %end
@@ -177,10 +182,10 @@ classdef Model
             neighbourhood = [round(valueInMM/obj.image.voxelSize(Image.DIR_Y)), round(valueInMM/obj.image.voxelSize(Image.DIR_X))];
         end
         
-        function gradient = gradientOfModel(obj,n)
-            [u, v] = calculateAvrVOxelsIntensiti(obj, n);
-            fInside = fIn(obj,n,u);
-            fOutside = fOut(obj,n,v);
+        function gradient = gradientOfModel(obj,n,middle)
+            [u, v] = calculateAvrVOxelsIntensiti(obj,n,middle);
+            fInside = fIn(obj,n,middle,u);
+            fOutside = fOut(obj,n,middle,v);
             gradient = fOutside - fInside;
         end
         
@@ -205,7 +210,8 @@ classdef Model
         
         function obj = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
             disp('Segmentation started.');
-            startEnergy = energyOfModel(obj);
+            startEnergy = energyOfModel(obj,obj.rs);
+            odlRs = obj.rs;
             nWrongIter = 0;
             nIter = 0;
             for i=1:iter
@@ -214,7 +220,7 @@ classdef Model
                 dsplmc = zeros(1,length(obj.rs));
                 oldRs = obj.rs;
                 for n=1:length(dsplmc)
-                    dsplmc(n) = gradientOfModel(obj,n);
+                    dsplmc(n) = gradientOfModel(obj,n, obj.rs);
                 end
                 minD = min(dsplmc);
                 maxD = max(dsplmc);
@@ -229,7 +235,7 @@ classdef Model
                 end
                 obj.rs = medfilt1(obj.rs);
                 obj = updateBsplineNodes(obj);
-                newEnergy = energyOfModel(obj);
+                newEnergy = energyOfModel(obj,odlRs);
                 if newEnergy < startEnergy
                     startEnergy = newEnergy;
                     lambda = lambda*lambdaP;
