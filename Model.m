@@ -8,10 +8,15 @@ classdef Model
         % Model coordinates:
         thetas;
         phis;
+        spacingTheta;
+        spacingPhi;
         rs;
         bspline;
         image Image
         neighbourhood
+        alfa = 1;
+        beta = 1;
+        gamma = 1;
     end
     
     methods (Access = public)
@@ -22,6 +27,8 @@ classdef Model
             obj.middle = [y x z];
             obj.thetas = linspace(0,180,ntheta+1);
             obj.phis = linspace(0,360,nphi+1);
+            obj.spacingTheta = pi/ntheta;
+            obj.spacingPhi = 2*pi/nphi;
             obj.rs = ones(ntheta+1,nphi+1);
             obj.neighbourhood = [5,5];
         end
@@ -61,6 +68,12 @@ classdef Model
         
         function obj = updateBsplineNodes(obj)
             obj.bspline = fastBSpline(obj.bspline.knots,obj.rs);
+        end
+        
+        function obj = setWeights(obj, alfa, beta, gamma)
+            obj.alfa = alfa;
+            obj.beta = beta;
+            obj.gamma = gamma;
         end
                 
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
@@ -163,8 +176,34 @@ classdef Model
             end
         end
         
-        function energy = energyOfModel(obj,middleRs)   %w p�tli po w�z�ach
-            energy = 0;
+        function elasticEnergy = elasticEnergyOfModel(obj,middleRs)
+            elasticEnergy = 0;
+            for n = 1:length(obj.phis)
+                nl = n-1;
+                if nl<1
+                    nl = length(obj.rs)-1;
+                end
+                nr = n+1;
+                if nr>length(obj.rs)
+                    nr = 2;
+                end
+                elasticEnergy = elasticEnergy + (((obj.rs(nr)-2*obj.rs(n) +(obj.rs(nl)))/obj.spacingPhi^2)^2)/2;
+            end
+        end
+        
+        function stiffnessEnergy = stiffnessEnergyOfModel(obj,middleRs)
+            stiffnessEnergy = 0;
+            for n = 1:length(obj.phis)
+                nn = n-1;
+                if nn<1
+                    nn = length(obj.rs)-1;
+                end
+                stiffnessEnergy = stiffnessEnergy + ((obj.rs(n)-obj.rs(nn))/obj.spacingPhi)^2;
+            end
+        end
+        
+        function imageEnergy = imageEnergyOfModel(obj,middleRs)   %w p�tli po w�z�ach
+            imageEnergy = 0;
             for n = 1:length(obj.phis)
                 [u, v] = calculateAvrVOxelsIntensiti(obj,n,middleRs(n));
                 fInside = fIn(obj,n,middleRs(n),u);
@@ -172,21 +211,81 @@ classdef Model
                 %if n==28
                 %    disp(['Energy of the node ' int2str(n) ' = ' num2str(fInside+fOutside)]);
                 %end
-                energy = energy + fInside + fOutside;
+                imageEnergy = imageEnergy + fInside + fOutside;
                 %disp(['Sum of the energy = ' num2str(energy)]);
             end
-            disp(['Energy of the model is: ', num2str(energy)])
+        end
+        
+        function wholeEnergy = energyOfModel(obj, middleRs)
+            energy = [0 0 0];
+            energy(1) = imageEnergyOfModel(obj,middleRs);
+            energy(2) = stiffnessEnergyOfModel(obj,middleRs);
+            energy(3) = elasticEnergyOfModel(obj,middleRs);
+            minEnergy = min(energy);
+            maxEnergy = max(energy);
+            if minEnergy==maxEnergy
+                energy = [1 1 1];
+            else
+                energy = (energy - minEnergy)./(maxEnergy-minEnergy);
+            end
+            wholeEnergy = obj.gamma*energy(1)+obj.alfa*energy(2)+obj.beta*energy(3);
+            disp(['Energy of the model is: ', num2str(wholeEnergy)])
         end
         
         function neighbourhood = createNeighbourhood(obj, valueInMM)
             neighbourhood = [round(valueInMM/obj.image.voxelSize(Image.DIR_Y)), round(valueInMM/obj.image.voxelSize(Image.DIR_X))];
         end
         
-        function gradient = gradientOfModel(obj,n,middle)
+        function gradients = modelGradient(obj,middle)
+            gradients = zeros(1,length(obj.rs));
+            dsplmc = zeros(3,length(obj.rs));
+            for n=1:length(obj.rs)
+                dsplmc(1,n) = imageGradient(obj,n, middle);
+                dsplmc(2,n) = stiffnessGradient(obj,n, middle);
+                dsplmc(3,n) = elasticGradient(obj,n, middle);
+            end
+            for e=1:3
+                minD = min(dsplmc(e,:));
+                maxD = max(dsplmc(e,:));
+                maxVal = max([abs(minD),abs(maxD)]);
+                dsplmc(e,:) = dsplmc(e,:)./maxVal;
+            end
+            for n=1:length(obj.rs)
+                gradients(n) = obj.gamma*dsplmc(1,n) + obj.alfa*dsplmc(2,n) + obj.beta*dsplmc(3,n);
+            end
+        end
+        
+        function gradient = imageGradient(obj,n,middle)
             [u, v] = calculateAvrVOxelsIntensiti(obj,n,middle);
             fInside = fIn(obj,n,middle,u);
             fOutside = fOut(obj,n,middle,v);
             gradient = fOutside - fInside;
+        end
+        
+        function stiffGradient = stiffnessGradient(obj,n,middle)
+            stiffGradient = 0;
+            nl = n-1;
+            if nl<1
+                nl = length(obj.rs)-1;
+            end
+            nr = n+1;
+            if nr>length(obj.rs)
+                nr = 2;
+            end
+            stiffGradient = ((obj.rs(nr) - obj.rs(n))/obj.spacingPhi) - ((obj.rs(n)-obj.rs(nl))/obj.spacingPhi);
+        end
+        
+        function elastGradient = elasticGradient(obj,n,middle)
+            elastGradient = 0;
+            nl = n-1;
+            if nl<1
+                nl = length(obj.rs)-1;
+            end
+            nr = n+1;
+            if nr>length(obj.rs)
+                nr = 2;
+            end
+            elastGradient = (obj.rs(nr)-4*obj.rs(nr)+6*obj.rs(n)-4*obj.rs(nl)+obj.rs(nl))/(obj.spacingPhi)^4;
         end
         
         function testModel(obj)
@@ -217,15 +316,8 @@ classdef Model
             for i=1:iter
                 nIter = nIter + 1;
                 disp(['Iteration = ' num2str(i) ', wrong iterations = ' num2str(nWrongIter) ', lambda = ' num2str(lambda)]);
-                dsplmc = zeros(1,length(obj.rs));
                 oldRs = obj.rs;
-                for n=1:length(dsplmc)
-                    dsplmc(n) = gradientOfModel(obj,n, obj.rs);
-                end
-                minD = min(dsplmc);
-                maxD = max(dsplmc);
-                maxVal = max([abs(minD),abs(maxD)]);
-                dsplmc = dsplmc./maxVal;
+                dsplmc = modelGradient(obj,obj.rs);
                 for n=1:length(dsplmc)
                     move = dsplmc(n)*lambda;
                     obj.rs(n) = obj.rs(n) + move;
