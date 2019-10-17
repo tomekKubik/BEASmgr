@@ -310,7 +310,6 @@ classdef Model
         function obj = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
             disp('Segmentation started.');
             startEnergy = energyOfModel(obj,obj.rs);
-            odlRs = obj.rs;
             nWrongIter = 0;
             nIter = 0;
             for i=1:iter
@@ -327,7 +326,7 @@ classdef Model
                 end
                 obj.rs = medfilt1(obj.rs);
                 obj = updateBsplineNodes(obj);
-                newEnergy = energyOfModel(obj,odlRs);
+                newEnergy = energyOfModel(obj,oldRs);
                 if newEnergy < startEnergy
                     startEnergy = newEnergy;
                     lambda = lambda*lambdaP;
