@@ -221,15 +221,18 @@ classdef Model
             energy(1) = imageEnergyOfModel(obj,middleRs);
             energy(2) = stiffnessEnergyOfModel(obj,middleRs);
             energy(3) = elasticEnergyOfModel(obj,middleRs);
+            wholeEnergy = obj.gamma*energy(1)+obj.alfa*energy(2)+obj.beta*energy(3);
+            disp(['Energy of the model is: ', num2str(wholeEnergy)])
+        end
+        
+        function ne = normalizeEnergy(energy)
             minEnergy = min(energy);
             maxEnergy = max(energy);
             if minEnergy==maxEnergy
-                energy = [1 1 1];
+                ne = [1 1 1];
             else
-                energy = (energy - minEnergy)./(maxEnergy-minEnergy);
+                ne = (energy - minEnergy)./(maxEnergy-minEnergy);
             end
-            wholeEnergy = obj.gamma*energy(1)+obj.alfa*energy(2)+obj.beta*energy(3);
-            disp(['Energy of the model is: ', num2str(wholeEnergy)])
         end
         
         function neighbourhood = createNeighbourhood(obj, valueInMM)
@@ -241,14 +244,16 @@ classdef Model
             dsplmc = zeros(3,length(obj.rs));
             for n=1:length(obj.rs)
                 dsplmc(1,n) = imageGradient(obj,n, middle);
-                dsplmc(2,n) = stiffnessGradient(obj,n, middle);
-                dsplmc(3,n) = elasticGradient(obj,n, middle);
+                dsplmc(2,n) = stiffnessGradient(obj,n);
+                dsplmc(3,n) = elasticGradient(obj,n);
             end
             for e=1:3
                 minD = min(dsplmc(e,:));
                 maxD = max(dsplmc(e,:));
                 maxVal = max([abs(minD),abs(maxD)]);
-                dsplmc(e,:) = dsplmc(e,:)./maxVal;
+                if maxD~=0
+                    dsplmc(e,:) = dsplmc(e,:)./maxVal;
+                end
             end
             for n=1:length(obj.rs)
                 gradients(n) = obj.gamma*dsplmc(1,n) + obj.alfa*dsplmc(2,n) + obj.beta*dsplmc(3,n);
@@ -262,8 +267,7 @@ classdef Model
             gradient = fOutside - fInside;
         end
         
-        function stiffGradient = stiffnessGradient(obj,n,middle)
-            stiffGradient = 0;
+        function stiffGradient = stiffnessGradient(obj,n)
             nl = n-1;
             if nl<1
                 nl = length(obj.rs)-1;
@@ -275,8 +279,7 @@ classdef Model
             stiffGradient = ((obj.rs(nr) - obj.rs(n))/obj.spacingPhi) - ((obj.rs(n)-obj.rs(nl))/obj.spacingPhi);
         end
         
-        function elastGradient = elasticGradient(obj,n,middle)
-            elastGradient = 0;
+        function elastGradient = elasticGradient(obj,n)
             nl = n-1;
             if nl<1
                 nl = length(obj.rs)-1;
