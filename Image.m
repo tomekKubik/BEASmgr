@@ -90,11 +90,11 @@
                     ReflectedImage(t,z,obj.dim(obj.DIR_Y)+1:2*obj.dim(obj.DIR_Y),:) = fmatrix;
                 end
             end
-             ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
-            for t = 1:obj.dim(obj.DIR_T)
-                    imagesc(abs(squeeze(ReflectedImage(:,:,1,t))));
-                    pause(0.03)  
-            end 
+            ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
+%             for t = 1:obj.dim(obj.DIR_T)
+%                     imagesc(abs(squeeze(ReflectedImage(:,:,1,t))));
+%                     pause(0.03)  
+%             end 
             
         end    
             
