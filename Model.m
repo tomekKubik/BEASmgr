@@ -176,7 +176,7 @@ classdef Model
             end
         end
         
-        function elasticEnergy = elasticEnergyOfModel(obj,middleRs)
+        function elasticEnergy = elasticEnergyOfModel(obj)
             elasticEnergy = 0;
             for n = 1:length(obj.phis)
                 nl = n-1;
@@ -191,7 +191,7 @@ classdef Model
             end
         end
         
-        function stiffnessEnergy = stiffnessEnergyOfModel(obj,middleRs)
+        function stiffnessEnergy = stiffnessEnergyOfModel(obj)
             stiffnessEnergy = 0;
             for n = 1:length(obj.phis)
                 nn = n-1;
@@ -219,8 +219,8 @@ classdef Model
         function wholeEnergy = energyOfModel(obj, middleRs)
             energy = [0 0 0];
             energy(1) = imageEnergyOfModel(obj,middleRs);
-            energy(2) = stiffnessEnergyOfModel(obj,middleRs);
-            energy(3) = elasticEnergyOfModel(obj,middleRs);
+            energy(2) = stiffnessEnergyOfModel(obj);
+            energy(3) = elasticEnergyOfModel(obj);
             wholeEnergy = obj.gamma*energy(1)+obj.alfa*energy(2)+obj.beta*energy(3);
             disp(['Energy of the model is: ', num2str(wholeEnergy)])
         end
@@ -261,7 +261,7 @@ classdef Model
         end
         
         function gradient = imageGradient(obj,n,middle)
-            [u, v] = calculateAvrVOxelsIntensiti(obj,n,middle);
+            [u, v] = calculateAvrVOxelsIntensiti(obj,n,middle(n));
             fInside = fIn(obj,n,middle,u);
             fOutside = fOut(obj,n,middle,v);
             gradient = fOutside - fInside;
