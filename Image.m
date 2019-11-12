@@ -79,7 +79,7 @@
                 iz = (oz/obj.voxelSize(obj.DIR_Z))+obj.imageOrigin(obj.DIR_Z);
         end
         
-        function ReflectedImage = ImageReflection(obj)
+        function [ReflectedImage,obj] = ImageReflection(obj)
              ReflectedImage = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y)*2,obj.dim(obj.DIR_X));
              mat = permute(obj.voxels,[4 3 1 2]);
              for t = 1:obj.dim(obj.DIR_T)
@@ -91,11 +91,9 @@
                 end
             end
             ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
-%             for t = 1:obj.dim(obj.DIR_T)
-%                     imagesc(abs(squeeze(ReflectedImage(:,:,1,t))));
-%                     pause(0.03)  
-%             end 
-            
+            obj.dim(obj.DIR_Y)=2*obj.dim(obj.DIR_Y);
+            obj.imageOrigin(obj.DIR_Y) = round(obj.dim(obj.DIR_Y)/2);
+            obj.voxels = ReflectedImage;
         end    
             
     end
