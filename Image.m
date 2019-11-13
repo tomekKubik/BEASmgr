@@ -79,7 +79,7 @@
                 iz = (oz/obj.voxelSize(obj.DIR_Z))+obj.imageOrigin(obj.DIR_Z);
         end
         
-        function [ReflectedImage,obj] = ImageReflection(obj)
+        function obj = ImageReflectionDown(obj)
              ReflectedImage = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y)*2,obj.dim(obj.DIR_X));
              mat = permute(obj.voxels,[4 3 1 2]);
              for t = 1:obj.dim(obj.DIR_T)
@@ -93,6 +93,57 @@
             ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
             obj.dim(obj.DIR_Y)=2*obj.dim(obj.DIR_Y);
             obj.imageOrigin(obj.DIR_Y) = round(obj.dim(obj.DIR_Y)/2);
+            obj.voxels = ReflectedImage;
+        end    
+        
+         function obj = ImageReflectionUp(obj)
+             ReflectedImage = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y)*2,obj.dim(obj.DIR_X));
+             mat = permute(obj.voxels,[4 3 1 2]);
+             for t = 1:obj.dim(obj.DIR_T)
+                for z = 1:obj.dim(obj.DIR_Z)
+                    matrix = squeeze(mat(t,z,:,:));
+                    fmatrix = flipud(matrix);
+                    ReflectedImage(t,z,1:obj.dim(obj.DIR_Y),:) = fmatrix;
+                    ReflectedImage(t,z,obj.dim(obj.DIR_Y)+1:2*obj.dim(obj.DIR_Y),:) = matrix;
+                end
+            end
+            ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
+            obj.dim(obj.DIR_Y)=2*obj.dim(obj.DIR_Y);
+            obj.imageOrigin(obj.DIR_Y) = round(obj.dim(obj.DIR_Y)/2);
+            obj.voxels = ReflectedImage;
+         end    
+        
+          function obj = ImageReflectionRight(obj)
+             ReflectedImage = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y),obj.dim(obj.DIR_X)*2);
+             mat = permute(obj.voxels,[4 3 1 2]);
+             for t = 1:obj.dim(obj.DIR_T)
+                for z = 1:obj.dim(obj.DIR_Z)
+                    matrix = squeeze(mat(t,z,:,:));
+                    ReflectedImage(t,z,:,1:obj.dim(obj.DIR_X)) = matrix;
+                    fmatrix = fliplr(matrix);
+                    ReflectedImage(t,z,:,obj.dim(obj.DIR_X)+1:2*obj.dim(obj.DIR_X)) = fmatrix;
+                end
+            end
+            ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
+            obj.dim(obj.DIR_X)=2*obj.dim(obj.DIR_X);
+            obj.imageOrigin(obj.DIR_X) = round(obj.dim(obj.DIR_X)/2);
+            obj.voxels = ReflectedImage;
+          end    
+        
+           function obj = ImageReflectionLeft(obj)
+             ReflectedImage = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y),obj.dim(obj.DIR_X)*2);
+             mat = permute(obj.voxels,[4 3 1 2]);
+             for t = 1:obj.dim(obj.DIR_T)
+                for z = 1:obj.dim(obj.DIR_Z)
+                    matrix = squeeze(mat(t,z,:,:));
+                    fmatrix = fliplr(matrix);
+                    ReflectedImage(t,z,:,1:obj.dim(obj.DIR_X)) = fmatrix;
+                    ReflectedImage(t,z,:,obj.dim(obj.DIR_X)+1:2*obj.dim(obj.DIR_X)) = matrix;
+                end
+            end
+            ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
+            obj.dim(obj.DIR_X)=2*obj.dim(obj.DIR_X);
+            obj.imageOrigin(obj.DIR_X) = round(obj.dim(obj.DIR_X)/2);
             obj.voxels = ReflectedImage;
         end    
             
