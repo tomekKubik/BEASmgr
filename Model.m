@@ -319,7 +319,7 @@ classdef Model
                 nIter = nIter + 1;
                 disp(['Iteration = ' num2str(i) ', wrong iterations = ' num2str(nWrongIter) ', lambda = ' num2str(lambda)]);
                 oldRs = obj.rs;
-                dsplmc = modelGradient(obj,obj.rs);
+                dsplmc = modelGradient(obj,oldRs);
                 for n=1:length(dsplmc)
                     move = dsplmc(n)*lambda;
                     obj.rs(n) = obj.rs(n) + move;
@@ -330,19 +330,19 @@ classdef Model
                 obj.rs = medfilt1(obj.rs);
                 obj = updateBsplineNodes(obj);
                 newEnergy = energyOfModel(obj,oldRs);
-                if newEnergy < startEnergy
+%                if newEnergy < startEnergy
                     startEnergy = newEnergy;
                     lambda = lambda*lambdaP;
                     nWrongIter = 0;
-                else
-                    obj.rs = oldRs;
-                    obj = updateBsplineNodes(obj);
-                    lambda = lambda/lambdaN;
-                    nWrongIter = nWrongIter + 1;
-                    if nWrongIter == wIter
-                        break
-                    end
-                end
+%                  else
+%                      obj.rs = oldRs;
+%                      obj = updateBsplineNodes(obj);
+%                      lambda = lambda/lambdaN;
+%                      nWrongIter = nWrongIter + 1;
+%                      if nWrongIter == wIter
+%                          break
+%                      end
+%                  end
             end
             disp(['Segmentation finished after ' num2str(nIter) ' iterations.']);
         end
