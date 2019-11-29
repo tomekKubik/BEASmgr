@@ -311,6 +311,66 @@ classdef Model
              end
         end
         
+        function segResult = getModelImageDown(obj)
+            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
+            for x = 1:obj.image.dim(Image.DIR_X)
+                for y = 1:obj.image.dim(Image.DIR_Y)
+                    location = isPixelInOrOut(obj, x, y);
+                    if location <= 0.5
+                        segResult(:,:,y,x) = 1;
+                    else
+                        segResult(:,:,y,x) = 0;
+                    end
+                end
+            end
+            segResult(:,:,obj.image.dimY0+1:obj.image.dim(Image.DIR_Y),:) = [];
+        end
+        
+        function segResult = getModelImageUp(obj)
+            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
+            for x = 1:obj.image.dim(Image.DIR_X)
+                for y = 1:obj.image.dim(Image.DIR_Y)
+                    location = isPixelInOrOut(obj, x, y);
+                    if location <= 0.5
+                        segResult(:,:,y,x) = 1;
+                    else
+                        segResult(:,:,y,x) = 0;
+                    end
+                end
+            end
+            segResult(:,:,1:obj.image.dimY0,:) = [];
+        end
+        
+        function segResult = getModelImageLeft(obj)
+            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
+            for x = 1:obj.image.dim(Image.DIR_X)
+                for y = 1:obj.image.dim(Image.DIR_Y)
+                    location = isPixelInOrOut(obj, x, y);
+                    if location <= 0.5
+                        segResult(:,:,y,x) = 1;
+                    else
+                        segResult(:,:,y,x) = 0;
+                    end
+                end
+            end
+            segResult(:,:,:,1:obj.image.dimX0) = [];
+        end
+        
+        function segResult = getModelImageRight(obj)
+            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
+            for x = 1:obj.image.dim(Image.DIR_X)
+                for y = 1:obj.image.dim(Image.DIR_Y)
+                    location = isPixelInOrOut(obj, x, y);
+                    if location <= 0.5
+                        segResult(:,:,y,x) = 1;
+                    else
+                        segResult(:,:,y,x) = 0;
+                    end
+                end
+            end
+            segResult(:,:,:,obj.image.dimX0+1:obj.image.dim(Image.DIR_X)) = [];
+        end
+        
         function obj = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
             disp('Segmentation started.');
             startLambda = lambda;
