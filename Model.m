@@ -177,7 +177,7 @@ classdef Model
         end
         
         function elasticEnergy = elasticEnergyOfModel(obj)
-            elasticEnergy = 0;
+            ee = zeros(1,length(obj.phis));
             for n = 1:length(obj.phis)
                 nl = n-1;
                 if nl<1
@@ -187,33 +187,35 @@ classdef Model
                 if nr>length(obj.rs)
                     nr = 2;
                 end
-                elasticEnergy = elasticEnergy + (((obj.rs(nr)-2*obj.rs(n) +(obj.rs(nl)))/obj.spacingPhi^2)^2)/2;
+                ee = (((obj.rs(nr)-2*obj.rs(n) +(obj.rs(nl)))/obj.spacingPhi^2)^2)/2;
             end
+%            ee = normalizeEnergy(obj,ee);
+            elasticEnergy = sum(ee);
         end
         
         function stiffnessEnergy = stiffnessEnergyOfModel(obj)
-            stiffnessEnergy = 0;
+            se = zeros(1,length(obj.phis));
             for n = 1:length(obj.phis)
                 nn = n-1;
                 if nn<1
                     nn = length(obj.rs)-1;
                 end
-                stiffnessEnergy = stiffnessEnergy + ((obj.rs(n)-obj.rs(nn))/obj.spacingPhi)^2;
+                se(n) = ((obj.rs(n)-obj.rs(nn))/obj.spacingPhi)^2;
             end
+%            se = normalizeEnergy(obj,se);
+            stiffnessEnergy = sum(se);
         end
         
         function imageEnergy = imageEnergyOfModel(obj,middleRs)   %w p�tli po w�z�ach
-            imageEnergy = 0;
+            ie = zeros(1,length(obj.phis));
             for n = 1:length(obj.phis)
                 [u, v] = calculateAvrVOxelsIntensiti(obj,n,middleRs(n));
                 fInside = fIn(obj,n,middleRs(n),u);
                 fOutside = fOut(obj,n,middleRs(n),v);
-                %if n==28
-                %    disp(['Energy of the node ' int2str(n) ' = ' num2str(fInside+fOutside)]);
-                %end
-                imageEnergy = imageEnergy + fInside + fOutside;
-                %disp(['Sum of the energy = ' num2str(energy)]);
+                ie(n) = fInside + fOutside;
             end
+%            ie = normalizeEnergy(obj,ie);
+            imageEnergy = sum(ie);
         end
         
         function wholeEnergy = energyOfModel(obj, middleRs)
@@ -225,13 +227,12 @@ classdef Model
             disp(['Energy of the model is: ', num2str(wholeEnergy)])
         end
         
-        function ne = normalizeEnergy(energy)
-            minEnergy = min(energy);
+        function ne = normalizeEnergy(obj,energy)
             maxEnergy = max(energy);
-            if minEnergy==maxEnergy
-                ne = [1 1 1];
+            if energy~=0
+                ne = energy/maxEnergy;
             else
-                ne = (energy - minEnergy)./(maxEnergy-minEnergy);
+                ne = maxEnergy;
             end
         end
         
@@ -312,6 +313,7 @@ classdef Model
         
         function obj = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
             disp('Segmentation started.');
+            startLambda = lambda;
             startEnergy = energyOfModel(obj,obj.rs);
             nWrongIter = 0;
             nIter = 0;
@@ -330,19 +332,27 @@ classdef Model
                 obj.rs = medfilt1(obj.rs);
                 obj = updateBsplineNodes(obj);
                 newEnergy = energyOfModel(obj,oldRs);
-%                if newEnergy < startEnergy
+                if newEnergy < startEnergy
                     startEnergy = newEnergy;
-                    lambda = lambda*lambdaP;
+                    if( lambda<startLambda )
+                        lambda = startLambda;
+                    else
+                        lambda = lambda*lambdaP;
+                    end
                     nWrongIter = 0;
-%                  else
-%                      obj.rs = oldRs;
-%                      obj = updateBsplineNodes(obj);
-%                      lambda = lambda/lambdaN;
-%                      nWrongIter = nWrongIter + 1;
-%                      if nWrongIter == wIter
-%                          break
-%                      end
-%                  end
+                else
+                    obj.rs = oldRs;
+                    obj = updateBsplineNodes(obj);
+                    if( lambda>startLambda )
+                        lambda = startLambda;
+                    else
+                        lambda = lambda/lambdaN;
+                    end
+                    nWrongIter = nWrongIter + 1;
+                    if nWrongIter == wIter
+                        break
+                    end
+                end
             end
             disp(['Segmentation finished after ' num2str(nIter) ' iterations.']);
         end

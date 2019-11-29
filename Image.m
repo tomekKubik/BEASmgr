@@ -33,8 +33,10 @@ classdef Image
         
         function obj = read2DImageFromScript(obj,filePath,fileName,isFilter,filterSize)
             %IMAGE Read image from file selected by user ////
-            % Wykonaj skrypt z pliku
+            % Wykonaj skrypt z pliku;
+            save('tmp.mat','isFilter','filterSize');
             run(fullfile(filePath,fileName))
+            load('tmp.mat','isFilter','filterSize');
             macierz = BB_data_decim;
             %dim
             obj = Image(1,1,1,1);
@@ -61,10 +63,11 @@ classdef Image
             tmpVoxels = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y),obj.dim(obj.DIR_X));
             for t = 1:obj.dim(obj.DIR_T)
                 for z = 1:obj.dim(obj.DIR_Z)
-                    if isFilter==TRUE
+                    if isFilter==true
                         tmpVoxels(t,z,:,:) = imgaussfilt(macierz(:,:,t),filterSize);
                     else
                         tmpVoxels(t,z,:,:) = macierz(:,:,t);
+                    end
                 end
             end
             obj.voxels = permute(tmpVoxels,[3 4 2 1]);
