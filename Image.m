@@ -19,6 +19,8 @@ classdef Image
         voxelSize; % 1-D 3 element matrix containg voxel sizes in direction: [dx dy dz]
         imageOrigin; %  1-D 3 element matrix containg location of the image origin: [ox oy oz] skalowanie
         voxels; % 4-D matrix containg all image voxels: [time z x y];
+        dimX0;
+        dimY0;
     end
     
     methods (Access = public)
@@ -88,6 +90,7 @@ classdef Image
         function obj = ImageReflectionDown(obj)
             ReflectedImage = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y)*2,obj.dim(obj.DIR_X));
             mat = permute(obj.voxels,[4 3 1 2]);
+            
             for t = 1:obj.dim(obj.DIR_T)
                 for z = 1:obj.dim(obj.DIR_Z)
                     matrix = squeeze(mat(t,z,:,:));
@@ -97,6 +100,8 @@ classdef Image
                 end
             end
             ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
+            obj.dimX0 = obj.dim(obj.DIR_X);
+            obj.dimY0 = obj.dim(obj.DIR_Y);
             obj.dim(obj.DIR_Y)=2*obj.dim(obj.DIR_Y);
             obj.imageOrigin(obj.DIR_Y) = round(obj.dim(obj.DIR_Y)/2);
             obj.voxels = ReflectedImage;
@@ -114,6 +119,8 @@ classdef Image
                 end
             end
             ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
+            obj.dimX0 = obj.dim(obj.DIR_X);
+            obj.dimY0 = obj.dim(obj.DIR_Y);
             obj.dim(obj.DIR_Y)=2*obj.dim(obj.DIR_Y);
             obj.imageOrigin(obj.DIR_Y) = round(obj.dim(obj.DIR_Y)/2);
             obj.voxels = ReflectedImage;
@@ -131,6 +138,8 @@ classdef Image
                 end
             end
             ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
+            obj.dimX0 = obj.dim(obj.DIR_X);
+            obj.dimY0 = obj.dim(obj.DIR_Y);
             obj.dim(obj.DIR_X)=2*obj.dim(obj.DIR_X);
             obj.imageOrigin(obj.DIR_X) = round(obj.dim(obj.DIR_X)/2);
             obj.voxels = ReflectedImage;
@@ -148,6 +157,8 @@ classdef Image
                 end
             end
             ReflectedImage = permute( ReflectedImage,[3 4 2 1]);
+            obj.dimX0 = obj.dim(obj.DIR_X);
+            obj.dimY0 = obj.dim(obj.DIR_Y);
             obj.dim(obj.DIR_X)=2*obj.dim(obj.DIR_X);
             obj.imageOrigin(obj.DIR_X) = round(obj.dim(obj.DIR_X)/2);
             obj.voxels = ReflectedImage;
