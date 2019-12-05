@@ -75,7 +75,7 @@ classdef Model
             obj.beta = beta;
             obj.gamma = gamma;
         end
-                
+        
         function [Xm, Ym] = calculateCoordinatesOfTheNode2D(obj,n)
             r = evalAt(obj.bspline,obj.phis(n));
             Xm = obj.middle(Image.DIR_X)+r*cos(obj.phis(n))/obj.image.voxelSize(Image.DIR_X);
@@ -189,7 +189,7 @@ classdef Model
                 end
                 ee = (((obj.rs(nr)-2*obj.rs(n) +(obj.rs(nl)))/obj.spacingPhi^2)^2)/2;
             end
-%            ee = normalizeEnergy(obj,ee);
+            %            ee = normalizeEnergy(obj,ee);
             elasticEnergy = sum(ee);
         end
         
@@ -202,7 +202,7 @@ classdef Model
                 end
                 se(n) = ((obj.rs(n)-obj.rs(nn))/obj.spacingPhi)^2;
             end
-%            se = normalizeEnergy(obj,se);
+            %            se = normalizeEnergy(obj,se);
             stiffnessEnergy = sum(se);
         end
         
@@ -214,7 +214,7 @@ classdef Model
                 fOutside = fOut(obj,n,middleRs(n),v);
                 ie(n) = fInside + fOutside;
             end
-%            ie = normalizeEnergy(obj,ie);
+            %            ie = normalizeEnergy(obj,ie);
             imageEnergy = sum(ie);
         end
         
@@ -298,17 +298,17 @@ classdef Model
         end
         
         function segResult = getModelImage(obj)
-             segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
-             for x = 1:obj.image.dim(Image.DIR_X)
-                 for y = 1:obj.image.dim(Image.DIR_Y)
-                     location = isPixelInOrOut(obj, x, y);
-                     if location <= 0.5
-                         segResult(:,:,y,x) = 1;
-                     else
-                         segResult(:,:,y,x) = 0;
-                     end
-                 end
-             end
+            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
+            for x = 1:obj.image.dim(Image.DIR_X)
+                for y = 1:obj.image.dim(Image.DIR_Y)
+                    location = isPixelInOrOut(obj, x, y);
+                    if location <= 0.5
+                        segResult(:,:,y,x) = 1;
+                    else
+                        segResult(:,:,y,x) = 0;
+                    end
+                end
+            end
         end
         
         function segResult = getModelImageDown(obj)
@@ -392,7 +392,7 @@ classdef Model
                 obj.rs = medfilt1(obj.rs);
                 obj = updateBsplineNodes(obj);
                 newEnergy = energyOfModel(obj,oldRs);
-                if newEnergy < startEnergy
+                 if newEnergy < startEnergy
                     startEnergy = newEnergy;
                     if( lambda<startLambda )
                         lambda = startLambda;
@@ -412,7 +412,7 @@ classdef Model
                     if nWrongIter == wIter
                         break
                     end
-                end
+               end
             end
             disp(['Segmentation finished after ' num2str(nIter) ' iterations.']);
         end
