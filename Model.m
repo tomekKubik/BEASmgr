@@ -371,6 +371,17 @@ classdef Model
             segResult(:,:,:,obj.image.dimX0+1:obj.image.dim(Image.DIR_X)) = [];
         end
         
+        function saveResult(obj,Result)
+           matrix = Result;
+           for t = 1:obj.image.dim(Image.DIR_T)
+                for z = 1:obj.image.dim(Image.DIR_Z)
+                    newMatrix = squeeze(matrix(t,z,:,:));
+                end
+            end
+           % filename = 'C:\Desktop\Result.mat';
+            save('result.mat','newMatrix');
+        end
+        
         function obj = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
             disp('Segmentation started.');
             startLambda = lambda;
