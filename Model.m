@@ -403,7 +403,7 @@ classdef Model
                 obj.rs = medfilt1(obj.rs);
                 obj = updateBsplineNodes(obj);
                 newEnergy = energyOfModel(obj,oldRs);
-                 if newEnergy < startEnergy
+                if newEnergy < startEnergy
                     startEnergy = newEnergy;
                     if( lambda<startLambda )
                         lambda = startLambda;
