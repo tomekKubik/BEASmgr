@@ -348,7 +348,7 @@ classdef Model
         function obj = runFramesSegmentation(obj,iter,wIter,lambda,lamdbaP,lambdaN,startT,endT)
             obj.binaryImage = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
             for t = startT:endT
-                runSegmentation(obj,iter,wIter,lambda,lamdbaP,lambdaN,t);
+                obj = runSegmentation(obj,iter,wIter,lambda,lamdbaP,lambdaN,t);
                 obj = getModelImageToBinary(obj,t);
             end
         end
@@ -383,7 +383,7 @@ classdef Model
                         lambda = lambda*lambdaP;
                     end
                     nWrongIter = 0;
-                else
+               else
                     obj.rs = oldRs;
                     obj = updateBsplineNodes(obj);
                     if( lambda>startLambda )
@@ -394,7 +394,7 @@ classdef Model
                     nWrongIter = nWrongIter + 1;
                     if nWrongIter == wIter
                         break
-                    end
+                   end
                end
             end
             disp(['Segmentation finished after ' num2str(nIter) ' iterations.']);
