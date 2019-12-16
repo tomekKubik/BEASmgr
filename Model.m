@@ -5,6 +5,7 @@ classdef Model
     
     properties (Access = public)
         middle; % Middle point - should be 1D array.
+        time; % model time
         % Model coordinates:
         thetas;
         phis;
@@ -12,7 +13,8 @@ classdef Model
         spacingPhi;
         rs;
         bspline;
-        image Image
+        image Image;
+        binaryImage; % Mask - result of the segmentation.
         neighbourhood
         alfa = 1;
         beta = 1;
@@ -20,10 +22,11 @@ classdef Model
     end
     
     methods (Access = public)
-        function obj = Model(x,y,z,ntheta,nphi)
+        function obj = Model(x,y,z,time,ntheta,nphi)
             %MODEL Construct an instance of this class
             %   Model is initialized with its middle coordinates and with the specific radial
             %   spacing (ntheta = 0 means model 2D).
+            obj.time = time;
             obj.middle = [y x z];
             obj.thetas = linspace(0,180,ntheta+1);
             obj.phis = linspace(0,360,nphi+1);
@@ -33,11 +36,11 @@ classdef Model
             obj.neighbourhood = [5,5];
         end
         
-        function [xunit, yunit, obj, firstPhis] = create2DModelBasedOnElipse(obj,image,x,y,z,ra,rb,ntheta,nphi,valueInMM)
-            obj = Model(x,y,z,ntheta,nphi);
+        function [xunit, yunit, obj, firstPhis] = create2DModelBasedOnElipse(obj,image,x,y,z,ra,rb,ntheta,nphi,valueInMM,t)
+            obj = Model(x,y,z,ntheta,nphi,t);
             obj.image = image;
             %      obj = Model (1,1,1,1,1);
-            [ix, iy, iz] = getMatrixFromReal(obj.image, x, y, z);
+            [ix,iy,iz] = getMatrixFromReal(obj.image, x, y, z);
             obj.middle(Image.DIR_X) = ix;
             obj.middle(Image.DIR_Y) = iy;
             
@@ -125,8 +128,8 @@ classdef Model
                         continue
                     end
                     hv = isPixelInOrOut(obj,x,y);
-                    sumInside = sumInside + obj.image.voxels(y,x,1,1)*hv;
-                    sumOutside = sumOutside + obj.image.voxels(y,x,1,1)*(1-hv);
+                    sumInside = sumInside + obj.image.voxels(y,x,1,obj.time)*hv;
+                    sumOutside = sumOutside + obj.image.voxels(y,x,1,obj.time)*(1-hv);
                     weightsInside = weightsInside + hv;
                     weightsOutside = weightsOutside + (1-hv);
                 end
@@ -154,7 +157,7 @@ classdef Model
                         continue
                     end
                     location = isPixelInOrOut(obj, x, y);
-                    fInside = fInside + location*((obj.image.voxels(y,x,1,1) - u)^2);
+                    fInside = fInside + location*((obj.image.voxels(y,x,1,obj.time) - u)^2);
                 end
             end
         end
@@ -171,7 +174,7 @@ classdef Model
                         continue
                     end
                     location = isPixelInOrOut(obj, x, y);
-                    fOutside = fOutside + (1-location)*(obj.image.voxels(y,x,1,1) - v)^2;
+                    fOutside = fOutside + (1-location)*(obj.image.voxels(y,x,1,obj.time) - v)^2;
                 end
             end
         end
@@ -297,78 +300,39 @@ classdef Model
             obj.phis
         end
         
-        function segResult = getModelImage(obj)
-            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
-            for x = 1:obj.image.dim(Image.DIR_X)
-                for y = 1:obj.image.dim(Image.DIR_Y)
-                    location = isPixelInOrOut(obj, x, y);
-                    if location <= 0.5
-                        segResult(:,:,y,x) = 1;
-                    else
-                        segResult(:,:,y,x) = 0;
+        function obj = getModelImageToBinary(obj,t)
+            for z = 1:obj.image.dim(Image.DIR_Z)
+                for x = 1:obj.image.dim(Image.DIR_X)
+                    for y = 1:obj.image.dim(Image.DIR_Y)
+                        location = isPixelInOrOut(obj, x, y);
+                        if location <= 0.5
+                            obj.binaryImage(t,z,y,x) = 1;
+                        else
+                            obj.binaryImage(t,z,y,x) = 0;
+                        end
                     end
                 end
             end
         end
         
-        function segResult = getModelImageDown(obj)
-            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
-            for x = 1:obj.image.dim(Image.DIR_X)
-                for y = 1:obj.image.dim(Image.DIR_Y)
-                    location = isPixelInOrOut(obj, x, y);
-                    if location <= 0.5
-                        segResult(:,:,y,x) = 1;
-                    else
-                        segResult(:,:,y,x) = 0;
-                    end
-                end
-            end
-            segResult(:,:,obj.image.dimY0+1:obj.image.dim(Image.DIR_Y),:) = [];
+        function bi = getModelImageDown(obj)
+            bi = obj.binaryImage;
+            bi(:,:,obj.image.dimY0+1:obj.image.dim(Image.DIR_Y),:) = [];
         end
         
-        function segResult = getModelImageUp(obj)
-            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
-            for x = 1:obj.image.dim(Image.DIR_X)
-                for y = 1:obj.image.dim(Image.DIR_Y)
-                    location = isPixelInOrOut(obj, x, y);
-                    if location <= 0.5
-                        segResult(:,:,y,x) = 1;
-                    else
-                        segResult(:,:,y,x) = 0;
-                    end
-                end
-            end
-            segResult(:,:,1:obj.image.dimY0,:) = [];
+        function bi = getModelImageUp(obj)
+            bi = obj.binaryImage;
+            bi(:,:,1:obj.image.dimY0,:) = [];
         end
         
-        function segResult = getModelImageLeft(obj)
-            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
-            for x = 1:obj.image.dim(Image.DIR_X)
-                for y = 1:obj.image.dim(Image.DIR_Y)
-                    location = isPixelInOrOut(obj, x, y);
-                    if location <= 0.5
-                        segResult(:,:,y,x) = 1;
-                    else
-                        segResult(:,:,y,x) = 0;
-                    end
-                end
-            end
-            segResult(:,:,:,1:obj.image.dimX0) = [];
+        function bi = getModelImageLeft(obj)
+            bi = obj.binaryImage;
+            bi(:,:,:,1:obj.image.dimX0) = [];
         end
         
-        function segResult = getModelImageRight(obj)
-            segResult = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
-            for x = 1:obj.image.dim(Image.DIR_X)
-                for y = 1:obj.image.dim(Image.DIR_Y)
-                    location = isPixelInOrOut(obj, x, y);
-                    if location <= 0.5
-                        segResult(:,:,y,x) = 1;
-                    else
-                        segResult(:,:,y,x) = 0;
-                    end
-                end
-            end
-            segResult(:,:,:,obj.image.dimX0+1:obj.image.dim(Image.DIR_X)) = [];
+        function bi = getModelImageRight(obj)
+            bi = obj.binaryImage;
+            bi(:,:,:,obj.image.dimX0+1:obj.image.dim(Image.DIR_X)) = [];
         end
         
         function saveResult(obj,Result)
@@ -377,13 +341,21 @@ classdef Model
                 for z = 1:obj.image.dim(Image.DIR_Z)
                     newMatrix = squeeze(matrix(t,z,:,:));
                 end
-            end
-           % filename = 'C:\Desktop\Result.mat';
-            save('result.mat','newMatrix');
+           end
+           save('result.mat','newMatrix');
         end
         
-        function obj = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN)
-            disp('Segmentation started.');
+        function obj = runFramesSegmentation(obj,iter,wIter,lambda,lamdbaP,lambdaN,startT,endT)
+            obj.binaryImage = zeros(obj.image.dim(Image.DIR_T),obj.image.dim(Image.DIR_Z),obj.image.dim(Image.DIR_Y),obj.image.dim(Image.DIR_X));
+            for t = startT:endT
+                runSegmentation(obj,iter,wIter,lambda,lamdbaP,lambdaN,t);
+                obj = getModelImageToBinary(obj,t);
+            end
+        end
+        
+        function obj = runSegmentation(obj,iter,wIter,lambda,lambdaP,lambdaN,t)
+            obj.time = t;
+            disp(['Segmentation started for frame ' int2str(t)]);
             startLambda = lambda;
             startEnergy = energyOfModel(obj,obj.rs);
             nWrongIter = 0;
