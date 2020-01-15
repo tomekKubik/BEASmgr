@@ -75,6 +75,48 @@ classdef Image
             obj.voxels = permute(tmpVoxels,[3 4 2 1]);
         end
         
+        function obj = read2DImageFromFile(obj,filePath,fileName,isFilter,filterSize)
+            %IMAGE Read image from file selected by user ////
+            % Wykonaj skrypt z pliku;
+            save('tmp.mat','isFilter','filterSize');
+            load(fullfile(filePath,fileName));
+            load('tmp.mat','isFilter','filterSize');
+            macierz = im_sim;
+            %dim
+            obj = Image(1,1,1,1);
+            [ny, nx, nt] = size(im_sim);       %zm
+            obj.dim(obj.DIR_X) = nx;
+            obj.dim(obj.DIR_Y) = ny;
+            obj.dim(obj.DIR_Z) = 1;
+            obj.dim(obj.DIR_T) = nt;
+            %voxelSize
+            obj.voxelSize(obj.DIR_X) = 1; %x
+            obj.voxelSize(obj.DIR_Y) = 1; %y
+            if obj.dim(obj.DIR_Z)==1
+                obj.voxelSize(obj.DIR_Z)=1;
+            else
+                obj.voxelSize(obj.DIR_Z) = 1;
+            end
+            %time
+            obj.time = linspace(1,60,obj.dim(obj.DIR_T));
+            %imageOrgin
+            obj.imageOrigin(obj.DIR_X) = round(obj.dim(obj.DIR_X)/2);
+            obj.imageOrigin(obj.DIR_Y) = round(obj.dim(obj.DIR_Y)/2);
+            obj.imageOrigin(obj.DIR_Z) = 1;
+            %voxels
+            tmpVoxels = zeros(obj.dim(obj.DIR_T),obj.dim(obj.DIR_Z),obj.dim(obj.DIR_Y),obj.dim(obj.DIR_X));
+            for t = 1:obj.dim(obj.DIR_T)
+                for z = 1:obj.dim(obj.DIR_Z)
+                    if isFilter==true
+                        tmpVoxels(t,z,:,:) = imgaussfilt(macierz(:,:,t),filterSize);
+                    else
+                        tmpVoxels(t,z,:,:) = macierz(:,:,t);
+                    end
+                end
+            end
+            obj.voxels = permute(tmpVoxels,[3 4 2 1]);
+        end
+        
         function [ox, oy, oz] = getRealFromMatrix(obj,ix, iy, iz)
             ox = obj.voxelSize(obj.DIR_X)*ix-obj.voxelSize(obj.DIR_X)*obj.imageOrigin(obj.DIR_X);
             oy = obj.voxelSize(obj.DIR_Y)*iy-obj.voxelSize(obj.DIR_Y)*obj.imageOrigin(obj.DIR_Y);
