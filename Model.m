@@ -37,7 +37,7 @@ classdef Model
         end
         
         function [xunit, yunit, obj, firstPhis] = create2DModelBasedOnElipse(obj,image,x,y,z,ra,rb,ntheta,nphi,valueInMM,t)
-            obj = Model(x,y,z,ntheta,nphi,t);
+            obj = Model(x,y,z,t,ntheta,nphi);
             obj.image = image;
             %      obj = Model (1,1,1,1,1);
             [ix,iy,iz] = getMatrixFromReal(obj.image, x, y, z);
